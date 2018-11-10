@@ -1,31 +1,40 @@
-#include <Eigen/Core>
 #include <iostream>
-#include <LBFGS.h>
+#include <eigen3/Eigen/Core>
+#include <eigen3/unsupported/Eigen/MPRealSupport>
+#include "include/mpreal.h"
+#include "include/LBFGS.h"
 
-using Eigen::VectorXd;
-using Eigen::MatrixXd;
+using Eigen::Matrix;
+using Eigen::Dynamic;
+
+using namespace mpfr;
 using namespace LBFGSpp;
 
-double foo(const VectorXd& x, VectorXd& grad)
+typedef Matrix<mpreal,Dynamic,Dynamic>  MatrixXmp;
+typedef Matrix<mpreal,Dynamic,1>        VectorXmp;
+
+mpreal foo(const VectorXmp& x, VectorXmp& grad)
 {
     const int n = x.size();
-    VectorXd d(n);
+    VectorXmp d(n);
     for(int i = 0; i < n; i++)
         d[i] = i;
 
-    double f = (x - d).squaredNorm();
+    mpreal f = (x - d).squaredNorm();
     grad.noalias() = 2.0 * (x - d);
     return f;
 }
 
 int main()
 {
+    mpreal::set_default_prec(1024);
     const int n = 10;
-    LBFGSParam<double> param;
-    LBFGSSolver<double> solver(param);
+    LBFGSParam<mpreal> param;
+    param.epsilon = mpreal(1e-20);
+    LBFGSSolver<mpreal> solver(param);
 
-    VectorXd x = VectorXd::Zero(n);
-    double fx;
+    VectorXmp x = VectorXmp::Zero(n);
+    mpreal fx;
     int niter = solver.minimize(foo, x, fx);
 
     std::cout << niter << " iterations" << std::endl;

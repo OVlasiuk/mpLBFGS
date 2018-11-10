@@ -4,7 +4,7 @@
 #ifndef LBFGS_H
 #define LBFGS_H
 
-#include <Eigen/Core>
+#include <eigen3/Eigen/Core>
 #include "LBFGS/Param.h"
 #include "LBFGS/LineSearch.h"
 
@@ -12,9 +12,9 @@
 namespace LBFGSpp {
 
 
-///
-/// LBFGS solver for unconstrained numerical optimization
-///
+//
+// LBFGS solver for unconstrained numerical optimization
+//
 template <typename Scalar>
 class LBFGSSolver
 {
@@ -50,33 +50,33 @@ private:
     }
 
 public:
-    ///
-    /// Constructor for LBFGS solver.
-    ///
-    /// \param param An object of \ref LBFGSParam to store parameters for the
-    ///        algorithm
-    ///
+    //
+    // Constructor for LBFGS solver.
+    //
+    // \param param An object of \ref LBFGSParam to store parameters for the
+    //        algorithm
+    //
     LBFGSSolver(const LBFGSParam<Scalar>& param) :
         m_param(param)
     {
         m_param.check_param();
     }
 
-    ///
-    /// Minimizing a multivariate function using LBFGS algorithm.
-    /// Exceptions will be thrown if error occurs.
-    ///
-    /// \param f  A function object such that `f(x, grad)` returns the
-    ///           objective function value at `x`, and overwrites `grad` with
-    ///           the gradient.
-    /// \param x  In: An initial guess of the optimal point. Out: The best point
-    ///           found.
-    /// \param fx Out: The objective function value at `x`.
-    ///
-    /// \return Number of iterations used.
-    ///
+    //
+    // Minimizing a multivariate function using LBFGS algorithm.
+    // Exceptions will be thrown if error occurs.
+    //
+    // \param f  A function object such that `f(x, grad)` returns the
+    //           objective function value at `x`, and overwrites `grad` with
+    //           the gradient.
+    // \param x  In: An initial guess of the optimal point. Out: The best point
+    //           found.
+    // \param fx Out: The objective function value at `x`.
+    //
+    // \return Number of iterations used.
+    //
     template <typename Foo>
-    inline int minimize(Foo& f, Vector& x, Scalar& fx)
+    inline int minimize(Foo f, Vector& x, Scalar& fx)
     {
         const int n = x.size();
         const int fpast = m_param.past;
@@ -123,7 +123,7 @@ public:
             // Convergence test -- objective function value
             if(fpast > 0)
             {
-                if(k >= fpast && std::abs((m_fx[k % fpast] - fx) / fx) < m_param.delta)
+                if(k >= fpast && mpfr::abs((m_fx[k % fpast] - fx) / fx) < m_param.delta)
                     return k;
 
                 m_fx[k % fpast] = fx;

@@ -6,6 +6,8 @@ Copyright (c) 2007-2010 Naoaki Okazaki
 
 Copyright (c) 2016 Yixuan Qiu
 
+Copyright (c) 2018 Alex Vlasiuk
+
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
 "Software"), to deal in the Software without restriction, including

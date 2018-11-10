@@ -11,9 +11,9 @@
 namespace LBFGSpp {
 
 
-///
-/// Line search algorithms for LBFGS. Mainly for internal use.
-///
+//
+// Line search algorithms for LBFGS. Mainly for internal use.
+//
 template <typename Scalar>
 class LineSearch
 {
@@ -21,22 +21,22 @@ private:
     typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> Vector;
 
 public:
-    ///
-    /// Line search by backtracking.
-    ///
-    /// \param f      A function object such that `f(x, grad)` returns the
-    ///               objective function value at `x`, and overwrites `grad` with
-    ///               the gradient.
-    /// \param fx     In: The objective function value at the current point.
-    ///               Out: The function value at the new point.
-    /// \param x      Out: The new point moved to.
-    /// \param grad   In: The current gradient vector. Out: The gradient at the
-    ///               new point.
-    /// \param step   In: The initial step length. Out: The calculated step length.
-    /// \param drt    The current moving direction.
-    /// \param xp     The current point.
-    /// \param param  Parameters for the LBFGS algorithm
-    ///
+    //
+    // Line search by backtracking.
+    //
+    // \param f      A function object such that `f(x, grad)` returns the
+    //               objective function value at `x`, and overwrites `grad` with
+    //               the gradient.
+    // \param fx     In: The objective function value at the current point.
+    //               Out: The function value at the new point.
+    // \param x      Out: The new point moved to.
+    // \param grad   In: The current gradient vector. Out: The gradient at the
+    //               new point.
+    // \param step   In: The initial step length. Out: The calculated step length.
+    // \param drt    The current moving direction.
+    // \param xp     The current point.
+    // \param param  Parameters for the LBFGS algorithm
+    //
     template <typename Foo>
     static void Backtracking(Foo& f, Scalar& fx, Vector& x, Vector& grad,
                              Scalar& step,

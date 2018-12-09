@@ -76,7 +76,7 @@ public:
     // \return Number of iterations used.
     //
     template <typename Foo>
-    inline int minimize(Foo f, Vector& x, Scalar& fx)
+    inline int minimize(Foo f, Vector& x, Scalar& fx, Scalar& gn)
     {
         const int n = x.size();
         const int fpast = m_param.past;
@@ -92,6 +92,7 @@ public:
         // Early exit if the initial x is already a minimizer
         if(gnorm <= m_param.epsilon * std::max(xnorm, Scalar(1.0)))
         {
+            gn = gnorm;
             return 1;
         }
 
@@ -118,6 +119,7 @@ public:
             // Convergence test -- gradient
             if(gnorm <= m_param.epsilon * std::max(xnorm, Scalar(1.0)))
             {
+                gn = gnorm;
                 return k;
             }
             // Convergence test -- objective function value

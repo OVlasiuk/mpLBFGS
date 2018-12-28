@@ -30,11 +30,10 @@ enum LINE_SEARCH_ALGORITHM
     // Backtracking method with the Armijo condition.
     // The backtracking method finds the step length such that it satisfies
     // the sufficient decrease (Armijo) condition,
-    // f(x + a \cdot d) \le f(x) + \beta' \cdot a \cdot g(x)^T d,
-    // where x is the current point, d is the current search direction,
-    // a is the step length, and \beta' is the value specified by
-    //  LBFGSParam::ftol. f and g are the function
-    // and gradient values respectively.
+    // f(x + step \cdot drt) \le f(x) + \beta' \cdot step \cdot g(x)^T drt,
+    // where x is the current point, drt is the current search direction,
+    // step is the step length, and \beta' is the value specified by
+    //  LBFGSParam::wolfec1. f and g are the function and gradient values respectively.
     //
     LBFGS_LINESEARCH_BACKTRACKING_ARMIJO = 1,
 
@@ -50,7 +49,7 @@ enum LINE_SEARCH_ALGORITHM
     // both the Armijo condition (`LBFGS_LINESEARCH_BACKTRACKING_ARMIJO`)
     // and the curvature condition,
     // g(x + a \cdot d)^T d \ge \beta \cdot g(x)^T d, where \beta
-    // is the value specified by  LBFGSParam::wolfe.
+    // is the value specified by  LBFGSParam::wolfec2.
     //
     LBFGS_LINESEARCH_BACKTRACKING_WOLFE = 2,
 
@@ -60,7 +59,7 @@ enum LINE_SEARCH_ALGORITHM
     // both the Armijo condition (`LBFGS_LINESEARCH_BACKTRACKING_ARMIJO`)
     // and the following condition,
     // \vert g(x + a \cdot d)^T d\vert \le \beta \cdot \vert g(x)^T d\vert,
-    // where \beta is the value specified by  LBFGSParam::wolfe.
+    // where \beta is the value specified by  LBFGSParam::wolfec2.
     //
     LBFGS_LINESEARCH_BACKTRACKING_STRONG_WOLFE = 3
 };
@@ -146,15 +145,15 @@ public:
     // The default value is  1e-4. This parameter should be greater
     // than zero and smaller than  0.5.
     //
-    Scalar ftol;
+    Scalar wolfec1;
     //
     // A coefficient for the Wolfe condition.
     // This parameter is valid only when the backtracking line-search
     // algorithm is used with the Wolfe condition.
     // The default value is  0.9. This parameter should be greater
-    // the  ftol parameter and smaller than  1.0.
+    // the  wolfec1 parameter and smaller than  1.0.
     //
-    Scalar wolfe;
+    Scalar wolfec2;
 
 public:
     //
@@ -172,8 +171,8 @@ public:
         max_linesearch = 20;
         min_step       = Scalar(1e-20);
         max_step       = Scalar(1e+20);
-        ftol           = Scalar(1e-4);
-        wolfe          = Scalar(0.9);
+        wolfec1           = Scalar(1e-4);
+        wolfec2          = Scalar(0.9);
     }
 
     //
@@ -202,10 +201,10 @@ public:
             throw std::invalid_argument("'min_step' must be positive");
         if(max_step < min_step )
             throw std::invalid_argument("'max_step' must be greater than 'min_step'");
-        if(ftol <= 0 || ftol >= 0.5)
-            throw std::invalid_argument("'ftol' must satisfy 0 < ftol < 0.5");
-        if(wolfe <= ftol || wolfe >= 1)
-            throw std::invalid_argument("'wolfe' must satisfy ftol < wolfe < 1");
+        if(wolfec1 <= 0 || wolfec1 >= 0.5)
+            throw std::invalid_argument("'wolfec1' must satisfy 0 < wolfec1 < 0.5");
+        if(wolfec2 <= wolfec1 || wolfec2 >= 1)
+            throw std::invalid_argument("'wolfec2' must satisfy wolfec1 < wolfec2 < 1");
     }
 };
 

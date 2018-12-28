@@ -30,9 +30,10 @@ public:
     // \param fx     In: The objective function value at the current point.
     //               Out: The function value at the new point.
     // \param x      Out: The new point moved to.
-    // \param grad   In: The current gradient vector. Out: The gradient at the
-    //               new point.
-    // \param step   In: The initial step length. Out: The calculated step length.
+    // \param grad   In: The current gradient vector. 
+    //               Out: The gradient at the new point.
+    // \param step   In: The initial step length.
+    //               Out: The calculated step length.
     // \param drt    The current moving direction.
     // \param xp     The current point.
     // \param param  Parameters for the LBFGS algorithm
@@ -46,6 +47,7 @@ public:
         // Decreasing and increasing factors
         const Scalar dec = 0.5;
         const Scalar inc = 2.1;
+        Scalar width;
 
         // Check the value of step
         if(step <= Scalar(0))
@@ -59,11 +61,9 @@ public:
         if(dg_init > 0)
             std::logic_error("the moving direction increases the objective function value");
 
-        const Scalar dg_test = param.ftol * dg_init;
-        Scalar width;
+        const Scalar dg_test = param.wolfec1 * dg_init;
 
-        int iter;
-        for(iter = 0; iter < param.max_linesearch; iter++)
+        for(int iter = 0; iter < param.max_linesearch; iter++)
         {
             // x_{k+1} = x_k + step * d_k
             x.noalias() = xp + step * drt;
@@ -79,7 +79,7 @@ public:
                     break;
 
                 const Scalar dg = grad.dot(drt);
-                if(dg < param.wolfe * dg_init)
+                if(dg < param.wolfec2 * dg_init)
                 {
                     width = inc;
                 } else {
@@ -87,7 +87,7 @@ public:
                     if(param.linesearch == LBFGS_LINESEARCH_BACKTRACKING_WOLFE)
                         break;
 
-                    if(dg > -param.wolfe * dg_init)
+                    if(dg > -param.wolfec2 * dg_init)
                     {
                         width = dec;
                     } else {
@@ -96,9 +96,6 @@ public:
                     }
                 }
             }
-
-            if(iter >= param.max_linesearch)
-                throw std::runtime_error("the line search routine reached the maximum number of iterations");
 
             if(step < param.min_step)
                 throw std::runtime_error("the line search step became smaller than the minimum value allowed");

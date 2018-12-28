@@ -6,6 +6,9 @@ pframe: pframe.cpp
 testmpeigen: testmpeigen.cpp
 	g++ -O2 -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations testmpeigen.cpp -o testmpeigen -lmpfr -lgmp 
 
+testmp: testmp.cpp
+	g++ -O2 -Wno-deprecated-declarations -Iinclude testmp.cpp -o testmp -lmpfr -lgmp 
+
 .PHONY: clean
 clean:
 	-rm -f *.o 

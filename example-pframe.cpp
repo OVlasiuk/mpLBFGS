@@ -39,23 +39,23 @@ public:
         for(int i = 0; i < n; i++)
         { 
             temp2[i] = x.segment(i*dim, dim).dot(x.segment(i*dim, dim));    // squared norms of the configuration 
-            tempp[i] = mpfr::pow(temp2[i], p/2.0);  // p-th powers of norms of the configuration
+            tempp[i] = mpfr::pow(temp2[i], p/mpreal("2.0"));  // p-th powers of norms of the configuration
         }
         // Energy
-        mpreal fx {n/2.0}; 
+        mpreal fx {n/mpreal("2.0")}; 
         for(int i = 0; i < n; i++)
             for (int j = 0; j < i; j++)
             {
                 fx += f(x.segment(j*dim, dim).dot(x.segment(i*dim, dim))) /tempp[i] /tempp[j];
             }
-        fx *= 2.0 / n / n;
+        fx *= mpreal("2.0") / n / n;
         // Gradient
         grad = VectorXmp::Zero(n*dim);
         for (int l = 0; l < dim; l++)   // iterate over coordinates
         {
             for(int i = 0; i < n; i++)  // iterate over vectors
             {
-                mpreal gr {0};
+                mpreal gr  {"0"};
                 for (int j = 0; j<n; j++)
                 {
                     mpreal prod = x.segment(j*dim, dim).dot(x.segment(i*dim, dim));
@@ -63,7 +63,7 @@ public:
                             fprime(prod) * x(j*dim+l) - p * x(i*dim+l) * f(prod) / temp2[i]
                           ) / tempp[i] / tempp[j]; 
                 }
-                grad(i*dim+l) = 2 * gr / n / n; // "2" to account for i-th column and i-th row
+                grad(i*dim+l) = mpreal("2") * gr / n / n; // "2" to account for i-th column and i-th row
             }
         }
         return fx;
@@ -75,11 +75,15 @@ int main(int argc, char *argv[])
     // Initialize scalar parameters
     unsigned n  {12};
     unsigned dim  {3};
-    mpreal p {3};
+    mpreal p {"3"};
     std::string epsilon {"20"};
-    mpreal fx, gn;
+    long inits {1};
+    mpreal fx {mpfr::const_infinity()}, gn;
+    int niter;
     switch (argc) {
-        case 5 ... INT_MAX: // only gcc and clang-compatible
+        case 6 ... INT_MAX: // only gcc and clang-compatible
+            inits = atol(argv[5]);
+        case 5: // only gcc and clang-compatible
             epsilon = argv[4];
         case 4: // only gcc and clang-compatible
             p = atof(argv[3]);
@@ -92,10 +96,11 @@ int main(int argc, char *argv[])
     std::cout << "dim = " << dim <<  std::endl;
     std::cout << "p = " << p <<  std::endl;
     std::cout << "-log10(epsilon) = " << epsilon <<  std::endl;
+    std::cout << "performing initializations: " << inits <<  std::endl;
 
     // Initialize vector parameters
-    VectorX y(n*dim);
     VectorXmp x(n*dim);
+    VectorX y(n*dim);
 
     // Initialize system parameters
     mpreal::set_default_prec(mpfr::digits2bits(100));
@@ -108,11 +113,21 @@ int main(int argc, char *argv[])
     Pframe fun(n, dim, p);
 
     // std::cout << "mpfr random\n" << mpfr::random((unsigned int) time(0)) << std::endl; 
-    y = VectorX::Random(n*dim); // random starting config
-    x += y.cast<mpreal>();  // TODO: VectorXmp::Random does not work?  
+    for (int i = 0; i < inits; i++)
+    {
+        mpreal f0;
+        VectorXmp x0(n*dim);
+        y = VectorX::Random(n*dim); // random starting config
+        x0 = y.cast<mpreal>();  // TODO: VectorXmp::Random does not work?  
 
-    int niter = solver.minimize(fun, x, fx, gn);
-    //
+        niter = solver.minimize(fun, x0, f0, gn);
+        if (f0 < fx)
+        {
+            fx = f0;
+            x = x0;
+        }
+        std::cout << niter << " iterations" << std::endl;
+    }
 
     Eigen::Map<MatrixXmp> M(x.data(), n,dim); 
     VectorXmp temp2 = VectorXmp::Zero(n);
@@ -125,7 +140,6 @@ int main(int argc, char *argv[])
     //
     
     // std::cout << "Gram matrix = \n"  <<  M*M.transpose() << std::endl;
-    std::cout << niter << " iterations" << std::endl;
     std::cout.precision(24);
     std::cout << "f(x) = " << fx << std::endl;
     std::cout <<  "Gradient norm \n" << gn  << std::endl; 

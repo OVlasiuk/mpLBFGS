@@ -118,7 +118,7 @@ namespace LBFGSpp {
                 // \param f      A function object such that `f(x, grad)` returns the
                 //               objective function value at `x`, and overwrites `grad` with
                 //               the gradient.
-                // \param fx     In: The objective function value at the current point.
+                // \param fout   In: The objective function value at the current point.
                 //               Out: The function value at the new point.
                 // \param x      Out: The new point moved to.
                 // \param grad   In: The current gradient vector. 
@@ -194,7 +194,7 @@ namespace LBFGSpp {
                                If an unusual termination is to occur then let
                                step be the lowest point obtained so far.
                                */
-                            if ((bracketed && ((step <= stmin || stmax <= step) )) || (bracketed && (stmax - stmin <= param.delta * stmax))) {
+                            if ((bracketed && ((step <= stmin || step >= stmax) || uinfo != 0 )) || (bracketed && (stmax - stmin <= param.delta * stmax))) {
                                 step = stx;
                             }
                             /*

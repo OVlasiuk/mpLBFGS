@@ -6,71 +6,14 @@
 
 #define min2(a, b)      ((a) <= (b) ? (a) : (b))
 #define max2(a, b)      ((a) >= (b) ? (a) : (b))
+#define max3(a, b, c)   max2(max2((a), (b)), (c));
+#define fsigndiff(x, y) (x * (y / mpfr::abs(y)) < 0.)
 /**
  * Define the local variables for computing minimizers.
  */
 #define USES_MINIMIZER \
-    Scalar a, d, gamma, theta, p, q, r, s;
+    Scalar a, d, gamma, theta, p, q, r, s; 
 
-/**
- * Find a minimizer of an interpolated cubic function.
- *  cm      The minimizer of the interpolated cubic.
- *  u       The value of one point, u.
- *  fu      The value of f(u).
- *  du      The value of f'(u).
- *  v       The value of another point, v.
- *  fv      The value of f(v).
- *  du      The value of f'(v).
- */
-#define CUBIC_MINIMIZER(cm, u, fu, du, v, fv, dv) \
-    d = (v) - (u); \
-    theta = ((fu) - (fv)) * 3 / d + (du) + (dv); \
-    p = fabs(theta); \
-    q = fabs(du); \
-    r = fabs(dv); \
-    s = max3(p, q, r); \
-    /* gamma = s*sqrt((theta/s)**2 - (du/s) * (dv/s)) */ \
-    a = theta / s; \
-    gamma = s * sqrt(a * a - ((du) / s) * ((dv) / s)); \
-    if ((v) < (u)) gamma = -gamma; \
-    p = gamma - (du) + theta; \
-    q = gamma - (du) + gamma + (dv); \
-    r = p / q; \
-    (cm) = (u) + r * d;
-
-/**
- * Find a minimizer of an interpolated cubic function.
- *  cm      The minimizer of the interpolated cubic.
- *  u       The value of one point, u.
- *  fu      The value of f(u).
- *  du      The value of f'(u).
- *  v       The value of another point, v.
- *  fv      The value of f(v).
- *  du      The value of f'(v).
- *  xmin    The maximum value.
- *  xmin    The minimum value.
- */
-#define CUBIC_MINIMIZER2(cm, u, fu, du, v, fv, dv, xmin, xmax) \
-    d = (v) - (u); \
-    theta = ((fu) - (fv)) * 3 / d + (du) + (dv); \
-    p = fabs(theta); \
-    q = fabs(du); \
-    r = fabs(dv); \
-    s = max3(p, q, r); \
-    /* gamma = s*sqrt((theta/s)**2 - (du/s) * (dv/s)) */ \
-    a = theta / s; \
-    gamma = s * sqrt(max2(0, a * a - ((du) / s) * ((dv) / s))); \
-    if ((u) < (v)) gamma = -gamma; \
-    p = gamma - (dv) + theta; \
-    q = gamma - (dv) + gamma + (du); \
-    r = p / q; \
-    if (r < 0. && gamma != 0.) { \
-        (cm) = (v) - r * d; \
-    } else if (a < 0) { \
-        (cm) = (xmax); \
-    } else { \
-        (cm) = (xmin); \
-    }
 /**
  * Find a minimizer of an interpolated quadratic function.
  *  qm      The minimizer of the interpolated quadratic.
@@ -98,6 +41,7 @@
 
 #include <Eigen/Core>
 #include <stdexcept>  // std::runtime_error 
+#include "mpreal.h"
 
 namespace LBFGSpp {
 
@@ -113,21 +57,21 @@ namespace LBFGSpp {
 
             public:
                 //
-                // Line search by backtracking.
+                // More-Thuente line search.
                 //
-                // \param f      A function object such that `f(x, grad)` returns the
+                // f      A function object such that `f(x, grad)` returns the
                 //               objective function value at `x`, and overwrites `grad` with
                 //               the gradient.
-                // \param fout   In: The objective function value at the current point.
-                //               Out: The function value at the new point.
-                // \param x      Out: The new point moved to.
-                // \param grad   In: The current gradient vector. 
-                //               Out: The gradient at the new point.
-                // \param step   In: The initial step length.
-                //               Out: The calculated step length.
-                // \param drt    The current moving direction.
-                // \param xp     The current point.
-                // \param param  Parameters for the LBFGS algorithm
+                // fout   In: The objective function value at the current point.
+                //        Out: The function value at the new point.
+                // x      Out: The new point moved to.
+                // grad   In: The current gradient vector. 
+                //        Out: The gradient at the new point.
+                // step   In: The initial step length.
+                //        Out: The calculated step length.
+                // drt    The current moving direction.
+                // xp     The current point.
+                // param  Parameters for the LBFGS algorithm
                 //
                 template <typename Foo>
                     static void MoreThuente(
@@ -268,7 +212,7 @@ namespace LBFGSpp {
                                 uinfo = update_trial_interval(
                                         stx, fx, dgx,
                                         sty, fy, dgy,
-                                        step, f, dg,
+                                        step, fout, dg,
                                         stmin, stmax, bracketed
                                         );
                             }
@@ -277,58 +221,58 @@ namespace LBFGSpp {
                                Force a sufficient decrease in the interval of uncertainty.
                                */
                             if (bracketed) {
-                                // TODO: replace fabs
-                                if (0.66 * prev_width <= fabs(sty - stx)) {
+                                if (0.66 * prev_width <= mpfr::abs(sty - stx)) {
                                     step = stx + 0.5 * (sty - stx);
                                 }
                                 prev_width = width;
-                                width = fabs(sty - stx);
-                            }
-
-
-
-                            // // TODO: remove this
-                            // // x_{k+1} = x_k + step * d_k
-                            // // Evaluate this candidate
-                            // fx = f(x, grad);
-
-                            // if(fx > fx_init + step * dg_test)
-                            // {
-                            //     width = dec;
-                            // } else {
-                            //     // Armijo condition is met
-                            //     if(param.linesearch == LBFGS_LINESEARCH_BACKTRACKING_ARMIJO)
-                            //         break;
-
-                            //     const Scalar dg = grad.dot(drt);
-                            //     if(dg < param.wolfec2 * dg_init)
-                            //     {
-                            //         width = inc;
-                            //     } else {
-                            //         // Regular Wolfe condition is met
-                            //         if(param.linesearch == LBFGS_LINESEARCH_BACKTRACKING_WOLFE)
-                            //             break;
-
-                            //         if(dg > -param.wolfec2 * dg_init)
-                            //         {
-                            //             width = dec;
-                            //         } else {
-                            //             // Strong Wolfe condition is met
-                            //             break;
-                            //         }
-                            //     }
-                            // }
-
-                            // if(step < param.min_step)
-                            //     throw std::runtime_error("the line search step became smaller than the minimum value allowed");
-
-                            // if(step > param.max_step)
-                            //     throw std::runtime_error("the line search step became larger than the maximum value allowed");
-
-                            // step *= width;
+                                width = mpfr::abs(sty - stx);
+                            } 
                         }
                     } 
 
+                static Scalar cubic_minimizer(Scalar cm, Scalar u, Scalar fu, Scalar du, Scalar v, Scalar fv, Scalar dv) 
+                {
+                    /**
+                     * Find a minimizer of an interpolated cubic function.
+                     *  cm      The minimizer of the interpolated cubic.
+                     *  u       The value of one point, u.
+                     *  fu      The value of f(u).
+                     *  du      The value of f'(u).
+                     *  v       The value of another point, v.
+                     *  fv      The value of f(v).
+                     *  du      The value of f'(v).
+                     */
+                    Scalar a, d, gamma, theta, p, q, r, s; 
+                    d = (v) - (u); \
+                        theta = ((fu) - (fv)) * 3 / d + (du) + (dv); \
+                        p = fabs(theta); \
+                        q = fabs(du); \
+                        r = fabs(dv); \
+                        s = max3(p, q, r); \
+                        /* gamma = s*sqrt((theta/s)**2 - (du/s) * (dv/s)) */ \
+                        a = theta / s; \
+                        gamma = s * sqrt(a * a - ((du) / s) * ((dv) / s)); \
+                        if ((v) < (u)) gamma = -gamma; \
+                            p = gamma - (du) + theta; \
+                                q = gamma - (du) + gamma + (dv); \
+                                r = p / q; \
+                                (cm) = (u) + r * d;
+                }
+
+                static int update_trial_interval(
+                        Scalar &x,
+                        Scalar &fx,
+                        Scalar &dx,
+                        Scalar &y,
+                        Scalar &fy,
+                        Scalar &dy,
+                        Scalar &t,
+                        Scalar &ft,
+                        const Scalar &dt,
+                        const Scalar tmin,
+                        const Scalar tmax,
+                        int &bracketed
+                        )
                 /**
                  * update_trial_interval
                  * Update a safeguarded trial value and interval for line search.
@@ -351,27 +295,14 @@ namespace LBFGSpp {
                  *  tmin    The minimum value for the trial value, t.
                  *  tmax    The maximum value for the trial value, t.
                  *  bracketed  The predicate if the trial value is bracketed.
-                 *  @retval int     Status value. Zero indicates a normal termination.
+                 *  @retval
+                 *  int     Status value. Zero indicates a normal termination.
                  *  
                  *  @see
                  *      Jorge J. More and David J. Thuente. Line search algorithm with
                  *      guaranteed sufficient decrease. ACM Transactions on Mathematical
                  *      Software (TOMS), Vol 20, No 3, pp. 286-307, 1994.
                  */
-                static int update_trial_interval(
-                        Scalar &x,
-                        Scalar &fx,
-                        Scalar &dx,
-                        Scalar &y,
-                        Scalar &fy,
-                        Scalar &dy,
-                        Scalar &t,
-                        Scalar &ft,
-                        Scalar &dt,
-                        const Scalar tmin,
-                        const Scalar tmax,
-                        int &bracketed
-                        )
                 {
                     int bound;
                     int dsign = fsigndiff(dt, dx);
@@ -408,10 +339,9 @@ namespace LBFGSpp {
                            */
                         bracketed = 1;
                         bound = 1;
-                        CUBIC_MINIMIZER(mc, x, fx, dx, t, ft, dt);
+                        cubic_minimizer(mc, x, fx, dx, t, ft, dt);
                         QUADR_MINIMIZER(mq, x, fx, dx, t, ft);
-                        // TODO: replace fabs
-                        if (fabs(mc - x) < fabs(mq - x)) {
+                        if (mpfr::abs(mc - x) < mpfr::abs(mq - x)) {
                             newt = mc;
                         } else {
                             newt = mc + 0.5 * (mq - mc);
@@ -425,14 +355,14 @@ namespace LBFGSpp {
                            */
                         bracketed = 1;
                         bound = 0;
-                        CUBIC_MINIMIZER(mc, x, fx, dx, t, ft, dt);
+                        cubic_minimizer(mc, x, fx, dx, t, ft, dt);
                         QUADR_MINIMIZER2(mq, x, dx, t, dt);
-                        if (fabs(mc - t) > fabs(mq - t)) {
+                        if (mpfr::abs(mc - t) > mpfr::abs(mq - t)) {
                             newt = mc;
                         } else {
                             newt = mq;
                         }
-                    } else if (fabs(dt) < fabs(dx)) {
+                    } else if (mpfr::abs(dt) < mpfr::abs(dx)) {
                         /*
                            Case 3: a lower function value, derivatives of the
                            same sign, and the magnitude of the derivative decreases.
@@ -448,13 +378,13 @@ namespace LBFGSpp {
                         CUBIC_MINIMIZER2(mc, x, fx, dx, t, ft, dt, tmin, tmax);
                         QUADR_MINIMIZER2(mq, x, dx, t, dt);
                         if (bracketed) {
-                            if (fabs(t - mc) < fabs(t - mq)) {
+                            if (mpfr::abs(t - mc) < mpfr::abs(t - mq)) {
                                 newt = mc;
                             } else {
                                 newt = mq;
                             }
                         } else {
-                            if (fabs(t - mc) > fabs(t - mq)) {
+                            if (mpfr::abs(t - mc) > mpfr::abs(t - mq)) {
                                 newt = mc;
                             } else {
                                 newt = mq;
@@ -469,7 +399,7 @@ namespace LBFGSpp {
                            */
                         bound = 0;
                         if (bracketed) {
-                            CUBIC_MINIMIZER(newt, t, ft, dt, y, fy, dy);
+                            cubic_minimizer(newt, t, ft, dt, y, fy, dy);
                         } else if (x < t) {
                             newt = tmax;
                         } else {
@@ -515,7 +445,7 @@ namespace LBFGSpp {
                        of the interval.
                        */
                     if (bracketed && bound) {
-                        mq = x + 0.66 * (y - x);
+                        mq = x + Scalar(0.66) * (y - x);
                         if (x < y) {
                             if (mq < newt) newt = mq;
                         } else {

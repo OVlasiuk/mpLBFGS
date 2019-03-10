@@ -1,5 +1,6 @@
 // pframe energy optimization (unconstrained version)
 #include <iostream>
+#include <fstream>
 #include "include/mpreal.h"
 #include "include/LBFGS.h"
 #include <eigen3/Eigen/Core>
@@ -92,11 +93,15 @@ int main(int argc, char *argv[])
         case 2:
             n = atoi(argv[1]);
     }
-    std::cout << "n = " << n <<  std::endl;
-    std::cout << "dim = " << dim <<  std::endl;
-    std::cout << "p = " << p <<  std::endl;
-    std::cout << "-log10(epsilon) = " << epsilon <<  std::endl;
-    std::cout << "performing initializations: " << inits <<  std::endl;
+    std::cout << "Parameter values:" << std::endl;
+    std::cout << "n = " << n <<  "\t\t" << "dim = " << dim <<  "\t\t" << "p = " << p <<  "\t\t" << "-log10(epsilon) = " << epsilon <<  std::endl;
+    std::cout << "Performing initializations: " << inits <<  std::endl << std::endl;
+    if (argc<2)
+    {
+        std::cout << "This set of parameters corresponds to the following command line input: " << std::endl;
+        std::cout << "./pframe " << n << " " << dim << " " << p << " " << epsilon << " " << inits << std::endl << std::endl;
+    }
+
 
     // Initialize vector parameters
     VectorXmp x(n*dim);
@@ -139,10 +144,20 @@ int main(int argc, char *argv[])
         M.row(i) /= temp2[i];
     //
     
-    // std::cout << "Gram matrix = \n"  <<  M*M.transpose() << std::endl;
     std::cout.precision(24);
     std::cout << "f(x) = " << fx << std::endl;
     std::cout <<  "Gradient norm \n" << gn  << std::endl; 
+    std::cout <<  "Output the Gram matrix y/N? \n" ; 
+    char yn;
+    char filename[] {"grammatrix.txt"};
+    std::cin >> yn;
+    if (yn == 'y')
+    {
+        std::ofstream ostrm;
+        ostrm.open(filename);
+        ostrm << M*M.transpose() << '\n'; 
+        std::cout << "Written to file "  << filename  << std::endl;
+    }
 
     return 0;
 }

@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
 
     // Initialize the solver class
     LBFGSParam<mpreal> param;
+    param.m = 40;
     param.epsilon = mpreal("1e-"+epsilon);
     LBFGSSolver<mpreal> solver(param); 
     Pframe fun(n, dim, p);
@@ -149,12 +150,13 @@ int main(int argc, char *argv[])
     std::cout <<  "Gradient norm \n" << gn  << std::endl; 
     std::cout <<  "Output the Gram matrix y/N? \n" ; 
     char yn;
-    char filename[] {"grammatrix.txt"};
     std::cin >> yn;
     if (yn == 'y')
     {
+        char filename[] {"grammatrix.txt"};
         std::ofstream ostrm;
         ostrm.open(filename);
+        ostrm.precision(24);
         ostrm << M*M.transpose() << '\n'; 
         std::cout << "Written to file "  << filename  << std::endl;
     }

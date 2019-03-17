@@ -34,8 +34,8 @@ int main()
     LBFGSSolver<mpreal> solver(param);
 
     VectorXmp x = VectorXmp::Zero(n);
-    mpreal fx;
-    int niter = solver.minimize(foo, x, fx);
+    mpreal fx, gn;
+    int niter = solver.minimize(foo, x, fx, gn);
 
     std::cout << niter << " iterations" << std::endl;
     std::cout << "x = \n" << x.transpose() << std::endl;

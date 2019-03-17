@@ -1,51 +1,20 @@
-// Copyright (C) 2016 Yixuan Qiu <yixuan.qiu@cos.name>
-// Under MIT license
+// Copyright (c) 1990 Jorge Nocedal
+// Copyright (c) 2007-2010 Naoaki Okazaki
+// Copyright (c) 2016 Yixuan Qiu 
+// Copyright (c) 2019 Alex Vlasiuk <oleksandr.vlasiuk@gmail.com>
+// GPL license
 
 #ifndef LINE_SEARCHMT_H
 #define LINE_SEARCHMT_H
 
-#define min2(a, b)      ((a) <= (b) ? (a) : (b))
-#define max2(a, b)      ((a) >= (b) ? (a) : (b))
-#define max3(a, b, c)   max2(max2((a), (b)), (c));
+#define max3(a, b, c)   std::max(std::max((a), (b)), (c));
 #define fsigndiff(x, y) (x * (y / mpfr::abs(y)) < 0.)
-/**
- * Define the local variables for computing minimizers.
- */
-#define USES_MINIMIZER \
-    Scalar a, d, gamma, theta, p, q, r, s; 
-
-/**
- * Find a minimizer of an interpolated quadratic function.
- *  qm      The minimizer of the interpolated quadratic.
- *  u       The value of one point, u.
- *  fu      The value of f(u).
- *  du      The value of f'(u).
- *  v       The value of another point, v.
- *  fv      The value of f(v).
- */
-#define QUADR_MINIMIZER(qm, u, fu, du, v, fv) \
-    a = (v) - (u); \
-    (qm) = (u) + (du) / (((fu) - (fv)) / a + (du)) / 2 * a;
-
-/**
- * Find a minimizer of an interpolated quadratic function.
- *  qm      The minimizer of the interpolated quadratic.
- *  u       The value of one point, u.
- *  du      The value of f'(u).
- *  v       The value of another point, v.
- *  dv      The value of f'(v).
- */
-#define QUADR_MINIMIZER2(qm, u, du, v, dv) \
-    a = (u) - (v); \
-    (qm) = (v) + (dv) / ((dv) - (du)) * a;
 
 #include <Eigen/Core>
-#include <stdexcept>  // std::runtime_error 
+#include <stdexcept>  // for std::runtime_error 
 #include "mpreal.h"
 
-namespace LBFGSpp {
-
-
+namespace LBFGSpp { 
     //
     // Line search algorithms for LBFGS. Mainly for internal use.
     //
@@ -54,6 +23,310 @@ namespace LBFGSpp {
         {
             private:
                 typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> Vector;
+                //
+                // Line minimizer suite:
+                //
+                static Scalar cubic_minimizer(Scalar u, Scalar fu, Scalar du, Scalar v, Scalar fv, Scalar dv) 
+                {
+                    /**
+                     * Find a minimizer of an interpolated cubic function.
+                     *  cm      The minimizer of the interpolated cubic.
+                     *  u       One endpoint, u.
+                     *  fu      f(u).
+                     *  du      f'(u).
+                     *  v       Another endpoint, v.
+                     *  fv      f(v).
+                     *  du      f'(v).
+                     */
+                    Scalar cm, a, d, gamma, theta, p, q, r, s; 
+                    d = v - u; 
+                    theta = (fu - fv) * 3 / d + du + dv; 
+                    p = mpfr::abs(theta); // TODO this is not Scalar-independent
+                    q = mpfr::abs(du); 
+                    r = mpfr::abs(dv); 
+                    s = max3(p, q, r); 
+                    /* gamma = s*sqrt((theta/s)**2 - (du/s) * (dv/s)) */ 
+                    a = theta / s; 
+                    gamma = s * sqrt(a * a - (du / s) * (dv / s)); 
+                    if (v < u) gamma = -gamma; 
+                    p = gamma - du + theta; 
+                    q = gamma - du + gamma + dv; 
+                    r = p / q; 
+                    cm = u + r * d; 
+                    return cm;
+                }
+
+                static Scalar cubic_minimizer2(Scalar u, Scalar fu, Scalar du, Scalar v, Scalar fv, Scalar dv, Scalar xmin, Scalar xmax)
+                {
+                    /**
+                     * Find a minimizer of an interpolated cubic function.
+                     *  cm      The minimizer of the interpolated cubic.
+                     *  u       One endpoint, u.
+                     *  fu      f(u).
+                     *  du      f'(u).
+                     *  v       Another endpoint, v.
+                     *  fv      f(v).
+                     *  du      f'(v).
+                     *  xmax    The maximum value.
+                     *  xmin    The minimum value.
+                     */
+                    Scalar cm, a, d, gamma, theta, p, q, r, s;
+                    d = v - u; 
+                    theta = (fu - fv) * 3 / d + du + dv; 
+                    p = mpfr::abs(theta); 
+                    q = mpfr::abs(du); 
+                    r = mpfr::abs(dv); 
+                    s = max3(p, q, r); 
+                    /* gamma = s*sqrt((theta/s)**2 - (du/s) * (dv/s)) */ 
+                    a = theta / s; 
+                    gamma = s * sqrt(std::max(Scalar(0), a * a - (du / s) * (dv / s))); 
+                    if (u < v) gamma = -gamma; 
+                    p = gamma - dv + theta; 
+                    q = gamma - dv + gamma + du; 
+                    r = p / q; 
+                    if (r < 0. && gamma != 0.) { 
+                        cm = v - r * d; 
+                    } else if (a < 0) { 
+                        cm = xmax; 
+                    } else { 
+                        cm = xmin; 
+                    }
+                    return cm;
+                }
+
+                static Scalar quadr_minimizer(Scalar u, Scalar fu, Scalar du, Scalar v, Scalar fv)
+                {
+                    /**
+                     * Find a minimizer of an interpolated quadratic function.
+                     *  qm      The minimizer of the interpolated quadratic.
+                     *  u       One endpoint, u.
+                     *  fu      f(u).
+                     *  du      f'(u).
+                     *  v       Another endpoint, v.
+                     *  fv      f(v).
+                     */
+                    Scalar qm, a; 
+                    a = v - u; 
+                    qm = u + du / ((fu - fv) / a + du) / 2 * a;
+                    return qm;
+                } 
+
+                static Scalar quadr_minimizer2(Scalar u, Scalar du, Scalar v, Scalar dv) 
+                {
+                    /**
+                     * Find a minimizer of an interpolated quadratic function.
+                     *  qm      The minimizer of the interpolated quadratic.
+                     *  u       One endpoint, u.
+                     *  du      f'(u).
+                     *  v       Another endpoint, v.
+                     *  dv      f'(v).
+                     */
+                    Scalar qm, a; 
+                    a = u - v; 
+                    qm = v + dv / (dv - du) * a;
+                    return qm;
+                }
+
+                static int update_trial_interval(
+                        Scalar &x,
+                        Scalar &fx,
+                        Scalar &dx,
+                        Scalar &y,
+                        Scalar &fy,
+                        Scalar &dy,
+                        Scalar &t,
+                        Scalar &ft,
+                        const Scalar &dt,
+                        const Scalar tmin,
+                        const Scalar tmax,
+                        int &bracketed
+                        )
+                {
+                    /**
+                     * Update a safeguarded trial value and interval for line search.
+                     *
+                     *  The parameter x represents the step with the least function value.
+                     *  The parameter t represents the current step. This function assumes
+                     *  that the derivative at the point of x in the direction of the step.
+                     *  If the bracket is set to true, the minimizer has been bracketed in
+                     *  an interval of uncertainty with endpoints between x and y.
+                     *
+                     *  x       One endpoint.
+                     *  fx      f(x).
+                     *  dx      f'(x).
+                     *  y       Another endpoint.
+                     *  fy      f(y).
+                     *  dy      f'(y).
+                     *  t       The trial value, t.
+                     *  ft      f(t).
+                     *  dt      f'(t).
+                     *  tmin    The minimum value for the trial value, t.
+                     *  tmax    The maximum value for the trial value, t.
+                     *  bracketed  The predicate if the trial value is bracketed.
+                     *
+                     *  @retval
+                     *  int     Status value. Zero indicates a normal termination.
+                     *  
+                     *  @see
+                     *      Jorge J. More and David J. Thuente. Line search algorithm with
+                     *      guaranteed sufficient decrease. ACM Transactions on Mathematical
+                     *      Software (TOMS), Vol 20, No 3, pp. 286-307, 1994.
+                     */
+                    int bound;
+                    int dsign = fsigndiff(dt, dx);
+                    Scalar mcubic; /* minimizer of an interpolated cubic. */
+                    Scalar mquadr; /* minimizer of an interpolated quadratic. */
+                    Scalar newt;   /* new trial value. */
+
+                    /* Check the input parameters for errors. */
+                    if (bracketed) {
+                        if (t <= std::min(x, y) || std::max(x, y) <= t) {
+                            /* The trial value t is out of the interval. */
+                            return 1;
+                        }
+                        if (0. <= dx * (t - x)) {
+                            /* The function must decrease from x. */
+                            return 2;
+                        }
+                        if (tmax < tmin) {
+                            /* Incorrect tmin and tmax specified. */
+                            return 3;
+                        }
+                    }
+
+                    /*
+                       Trial value selection.
+                       */
+                    if (fx < ft) {
+                        /*
+                           Case 1: a higher function value.
+                           The minimum is bracketed. If the cubic minimizer is closer
+                           to x than the quadratic one, the cubic one is taken, else
+                           the average of the minimizers is taken.
+                           */
+                        bracketed = 1;
+                        bound = 1;
+                        if (mpfr::abs(mcubic - x) < mpfr::abs(mquadr - x)) {
+                            mcubic = cubic_minimizer(x, fx, dx, t, ft, dt);
+                            newt = mcubic;
+                        } else {
+                            mcubic = cubic_minimizer(x, fx, dx, t, ft, dt);
+                            mquadr = quadr_minimizer(x, fx, dx, t, ft);
+                            newt = mcubic + 0.5 * (mquadr - mcubic);
+                        }
+                    } else if (dsign) {
+                        /*
+                           Case 2: a lower function value and derivatives of
+                           opposite sign. The minimum is bracketed. If the cubic
+                           minimizer is closer to x than the quadratic (secant) one,
+                           the cubic one is taken, else the quadratic one is taken.
+                           */
+                        bracketed = 1;
+                        bound = 0;
+                        if (mpfr::abs(mcubic - t) > mpfr::abs(mquadr - t)) {
+                            mcubic = cubic_minimizer(x, fx, dx, t, ft, dt);
+                            newt = mcubic;
+                        } else {
+                            mquadr = quadr_minimizer2(x, dx, t, dt);
+                            newt = mquadr;
+                        }
+                    } else if (mpfr::abs(dt) < mpfr::abs(dx)) {
+                        /*
+                           Case 3: a lower function value, derivatives of the
+                           same sign, and the magnitude of the derivative decreases.
+                           The cubic minimizer is only used if the cubic tends to
+                           infinity in the direction of the minimizer or if the minimum
+                           of the cubic is beyond t. Otherwise the cubic minimizer is
+                           defined to be either tmin or tmax. The quadratic (secant)
+                           minimizer is also computed and if the minimum is bracketed
+                           then the the minimizer closest to x is taken, else the one
+                           farthest away is taken.
+                           */
+                        bound = 1;
+                        if (bracketed) {
+                            if (mpfr::abs(t - mcubic) < mpfr::abs(t - mquadr)) {
+                                mcubic = cubic_minimizer2(x, fx, dx, t, ft, dt, tmin, tmax);
+                                newt = mcubic;
+                            } else {
+                                mquadr = quadr_minimizer2(x, dx, t, dt);
+                                newt = mquadr;
+                            }
+                        } else {
+                            if (mpfr::abs(t - mcubic) > mpfr::abs(t - mquadr)) {
+                                mcubic = cubic_minimizer2(x, fx, dx, t, ft, dt, tmin, tmax);
+                                newt = mcubic;
+                            } else {
+                                mquadr = quadr_minimizer2(x, dx, t, dt);
+                                newt = mquadr;
+                            }
+                        }
+                    } else {
+                        /*
+                           Case 4: a lower function value, derivatives of the
+                           same sign, and the magnitude of the derivative does
+                           not decrease. If the minimum is not bracketed, the step
+                           is either tmin or tmax, else the cubic minimizer is taken.
+                           */
+                        bound = 0;
+                        if (bracketed) {
+                            newt = cubic_minimizer(t, ft, dt, y, fy, dy);
+                        } else if (x < t) {
+                            newt = tmax;
+                        } else {
+                            newt = tmin;
+                        }
+                    }
+
+                    /*
+                       Update the interval of uncertainty. This update does not
+                       depend on the new step or the case analysis above.
+
+                       - Case a: if f(x) < f(t),
+                       x <- x, y <- t.
+                       - Case b: if f(t) <= f(x) && f'(t)f'(x) > 0,
+                       x <- t, y <- y.
+                       - Case c: if f(t) <= f(x) && f'(t)f'(x) < 0, 
+                       x <- t, y <- x.
+                       */
+                    if (fx < ft) {
+                        /* Case a */
+                        y = t;
+                        fy = ft;
+                        dy = dt;
+                    } else {
+                        /* Case c */
+                        if (dsign) {
+                            y = x;
+                            fy = fx;
+                            dy = dx;
+                        }
+                        /* Cases b and c */
+                        x = t;
+                        fx = ft;
+                        dx = dt;
+                    }
+
+                    /* Clip the new trial value in [tmin, tmax]. */
+                    if (tmax < newt) newt = tmax;
+                    if (newt < tmin) newt = tmin;
+
+                    /*
+                       Redefine the new trial value if it is close to the upper bound
+                       of the interval.
+                       */
+                    if (bracketed && bound) {
+                        mquadr = x + Scalar(0.66) * (y - x);
+                        if (x < y) {
+                            if (mquadr < newt) newt = mquadr;
+                        } else {
+                            if (newt < mquadr) newt = mquadr;
+                        }
+                    }
+
+                    /* Return the new trial value. */
+                    t = newt;
+                    return 0;
+                }
 
             public:
                 //
@@ -125,8 +398,8 @@ namespace LBFGSpp {
                         {
 
                             if (bracketed) {
-                                stmin = min2(stx, sty);
-                                stmax = max2(stx, sty);
+                                stmin = std::min(stx, sty);
+                                stmax = std::max(stx, sty);
                             } else {
                                 stmin = stx;
                                 stmax = step + 4.0 * (step - stx);
@@ -161,7 +434,7 @@ namespace LBFGSpp {
                                 throw std::runtime_error("The step is the minimum value.");
                             if (bracketed && (stmax - stmin) <= param.delta * stmax)
                                 throw std::runtime_error("Relative width of the interval of uncertainty is at most param.delta.");
-                            if (fout <= ftest1 && abs(dg) <= param.wolfec2 * (-dg_init)) 
+                            if (fout <= ftest1 && mpfr::abs(dg) <= param.wolfec2 * (-dg_init)) 
                                 /* The strong Wolfe conditions hold. */
                                 return;
                             /*
@@ -229,235 +502,6 @@ namespace LBFGSpp {
                             } 
                         }
                     } 
-
-                static Scalar cubic_minimizer(Scalar cm, Scalar u, Scalar fu, Scalar du, Scalar v, Scalar fv, Scalar dv) 
-                {
-                    /**
-                     * Find a minimizer of an interpolated cubic function.
-                     *  cm      The minimizer of the interpolated cubic.
-                     *  u       The value of one point, u.
-                     *  fu      The value of f(u).
-                     *  du      The value of f'(u).
-                     *  v       The value of another point, v.
-                     *  fv      The value of f(v).
-                     *  du      The value of f'(v).
-                     */
-                    Scalar a, d, gamma, theta, p, q, r, s; 
-                    d = (v) - (u); \
-                        theta = ((fu) - (fv)) * 3 / d + (du) + (dv); \
-                        p = fabs(theta); \
-                        q = fabs(du); \
-                        r = fabs(dv); \
-                        s = max3(p, q, r); \
-                        /* gamma = s*sqrt((theta/s)**2 - (du/s) * (dv/s)) */ \
-                        a = theta / s; \
-                        gamma = s * sqrt(a * a - ((du) / s) * ((dv) / s)); \
-                        if ((v) < (u)) gamma = -gamma; \
-                            p = gamma - (du) + theta; \
-                                q = gamma - (du) + gamma + (dv); \
-                                r = p / q; \
-                                (cm) = (u) + r * d;
-                }
-
-                static int update_trial_interval(
-                        Scalar &x,
-                        Scalar &fx,
-                        Scalar &dx,
-                        Scalar &y,
-                        Scalar &fy,
-                        Scalar &dy,
-                        Scalar &t,
-                        Scalar &ft,
-                        const Scalar &dt,
-                        const Scalar tmin,
-                        const Scalar tmax,
-                        int &bracketed
-                        )
-                /**
-                 * update_trial_interval
-                 * Update a safeguarded trial value and interval for line search.
-                 *
-                 *  The parameter x represents the step with the least function value.
-                 *  The parameter t represents the current step. This function assumes
-                 *  that the derivative at the point of x in the direction of the step.
-                 *  If the bracket is set to true, the minimizer has been bracketed in
-                 *  an interval of uncertainty with endpoints between x and y.
-                 *
-                 *  x       The value of one endpoint.
-                 *  fx      The value of f(x).
-                 *  dx      The value of f'(x).
-                 *  y       The value of another endpoint.
-                 *  fy      The value of f(y).
-                 *  dy      The value of f'(y).
-                 *  t       The value of the trial value, t.
-                 *  ft      The value of f(t).
-                 *  dt      The value of f'(t).
-                 *  tmin    The minimum value for the trial value, t.
-                 *  tmax    The maximum value for the trial value, t.
-                 *  bracketed  The predicate if the trial value is bracketed.
-                 *  @retval
-                 *  int     Status value. Zero indicates a normal termination.
-                 *  
-                 *  @see
-                 *      Jorge J. More and David J. Thuente. Line search algorithm with
-                 *      guaranteed sufficient decrease. ACM Transactions on Mathematical
-                 *      Software (TOMS), Vol 20, No 3, pp. 286-307, 1994.
-                 */
-                {
-                    int bound;
-                    int dsign = fsigndiff(dt, dx);
-                    Scalar mc; /* minimizer of an interpolated cubic. */
-                    Scalar mq; /* minimizer of an interpolated quadratic. */
-                    Scalar newt;   /* new trial value. */
-                    USES_MINIMIZER;     /* for CUBIC_MINIMIZER and QUADR_MINIMIZER. */
-
-                    /* Check the input parameters for errors. */
-                    if (bracketed) {
-                        if (t <= min2(x, y) || max2(x, y) <= t) {
-                            /* The trial value t is out of the interval. */
-                            return 1;
-                        }
-                        if (0. <= dx * (t - x)) {
-                            /* The function must decrease from x. */
-                            return 2;
-                        }
-                        if (tmax < tmin) {
-                            /* Incorrect tmin and tmax specified. */
-                            return 3;
-                        }
-                    }
-
-                    /*
-                       Trial value selection.
-                       */
-                    if (fx < ft) {
-                        /*
-                           Case 1: a higher function value.
-                           The minimum is bracketed. If the cubic minimizer is closer
-                           to x than the quadratic one, the cubic one is taken, else
-                           the average of the minimizers is taken.
-                           */
-                        bracketed = 1;
-                        bound = 1;
-                        cubic_minimizer(mc, x, fx, dx, t, ft, dt);
-                        QUADR_MINIMIZER(mq, x, fx, dx, t, ft);
-                        if (mpfr::abs(mc - x) < mpfr::abs(mq - x)) {
-                            newt = mc;
-                        } else {
-                            newt = mc + 0.5 * (mq - mc);
-                        }
-                    } else if (dsign) {
-                        /*
-                           Case 2: a lower function value and derivatives of
-                           opposite sign. The minimum is bracketed. If the cubic
-                           minimizer is closer to x than the quadratic (secant) one,
-                           the cubic one is taken, else the quadratic one is taken.
-                           */
-                        bracketed = 1;
-                        bound = 0;
-                        cubic_minimizer(mc, x, fx, dx, t, ft, dt);
-                        QUADR_MINIMIZER2(mq, x, dx, t, dt);
-                        if (mpfr::abs(mc - t) > mpfr::abs(mq - t)) {
-                            newt = mc;
-                        } else {
-                            newt = mq;
-                        }
-                    } else if (mpfr::abs(dt) < mpfr::abs(dx)) {
-                        /*
-                           Case 3: a lower function value, derivatives of the
-                           same sign, and the magnitude of the derivative decreases.
-                           The cubic minimizer is only used if the cubic tends to
-                           infinity in the direction of the minimizer or if the minimum
-                           of the cubic is beyond t. Otherwise the cubic minimizer is
-                           defined to be either tmin or tmax. The quadratic (secant)
-                           minimizer is also computed and if the minimum is bracketed
-                           then the the minimizer closest to x is taken, else the one
-                           farthest away is taken.
-                           */
-                        bound = 1;
-                        CUBIC_MINIMIZER2(mc, x, fx, dx, t, ft, dt, tmin, tmax);
-                        QUADR_MINIMIZER2(mq, x, dx, t, dt);
-                        if (bracketed) {
-                            if (mpfr::abs(t - mc) < mpfr::abs(t - mq)) {
-                                newt = mc;
-                            } else {
-                                newt = mq;
-                            }
-                        } else {
-                            if (mpfr::abs(t - mc) > mpfr::abs(t - mq)) {
-                                newt = mc;
-                            } else {
-                                newt = mq;
-                            }
-                        }
-                    } else {
-                        /*
-                           Case 4: a lower function value, derivatives of the
-                           same sign, and the magnitude of the derivative does
-                           not decrease. If the minimum is not bracketed, the step
-                           is either tmin or tmax, else the cubic minimizer is taken.
-                           */
-                        bound = 0;
-                        if (bracketed) {
-                            cubic_minimizer(newt, t, ft, dt, y, fy, dy);
-                        } else if (x < t) {
-                            newt = tmax;
-                        } else {
-                            newt = tmin;
-                        }
-                    }
-
-                    /*
-                       Update the interval of uncertainty. This update does not
-                       depend on the new step or the case analysis above.
-
-                       - Case a: if f(x) < f(t),
-                       x <- x, y <- t.
-                       - Case b: if f(t) <= f(x) && f'(t)f'(x) > 0,
-                       x <- t, y <- y.
-                       - Case c: if f(t) <= f(x) && f'(t)f'(x) < 0, 
-                       x <- t, y <- x.
-                       */
-                    if (fx < ft) {
-                        /* Case a */
-                        y = t;
-                        fy = ft;
-                        dy = dt;
-                    } else {
-                        /* Case c */
-                        if (dsign) {
-                            y = x;
-                            fy = fx;
-                            dy = dx;
-                        }
-                        /* Cases b and c */
-                        x = t;
-                        fx = ft;
-                        dx = dt;
-                    }
-
-                    /* Clip the new trial value in [tmin, tmax]. */
-                    if (tmax < newt) newt = tmax;
-                    if (newt < tmin) newt = tmin;
-
-                    /*
-                       Redefine the new trial value if it is close to the upper bound
-                       of the interval.
-                       */
-                    if (bracketed && bound) {
-                        mq = x + Scalar(0.66) * (y - x);
-                        if (x < y) {
-                            if (mq < newt) newt = mq;
-                        } else {
-                            if (newt < mq) newt = mq;
-                        }
-                    }
-
-                    /* Return the new trial value. */
-                    t = newt;
-                    return 0;
-                }
-
         };
 
 

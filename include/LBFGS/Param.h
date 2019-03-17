@@ -1,5 +1,5 @@
-// Copyright (C) 2016 Yixuan Qiu <yixuan.qiu@cos.name>
-// Under MIT license
+// Copyright (c) 2016 Yixuan Qiu
+// Copyright (c) 2019 Alex Vlasiuk <oleksandr.vlasiuk@gmail.com>
 
 #ifndef PARAM_H
 #define PARAM_H

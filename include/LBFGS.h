@@ -111,7 +111,7 @@ namespace LBFGSpp {
 
                             // Line search to update x, fx and gradient
                             //
-                            LineSearch<Scalar>::Backtracking(f, fx, x, grad_new, step, drt_mov, x_old, m_param);
+                            LineSearchMT<Scalar>::MoreThuente(f, fx, x, grad_new, step, drt_mov, x_old, m_param);
 
                             // New x norm and gradient norm
                             xnorm = x.norm();

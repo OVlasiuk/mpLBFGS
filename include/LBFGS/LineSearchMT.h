@@ -206,12 +206,11 @@ namespace LBFGSpp {
                            */
                         bracketed = 1;
                         bound = 1;
+                        mcubic = cubic_minimizer(x, fx, dx, t, ft, dt);
+                        mquadr = quadr_minimizer(x, fx, dx, t, ft);
                         if (mpfr::abs(mcubic - x) < mpfr::abs(mquadr - x)) {
-                            mcubic = cubic_minimizer(x, fx, dx, t, ft, dt);
                             newt = mcubic;
                         } else {
-                            mcubic = cubic_minimizer(x, fx, dx, t, ft, dt);
-                            mquadr = quadr_minimizer(x, fx, dx, t, ft);
                             newt = mcubic + 0.5 * (mquadr - mcubic);
                         }
                     } else if (dsign) {
@@ -223,11 +222,11 @@ namespace LBFGSpp {
                            */
                         bracketed = 1;
                         bound = 0;
+                        mcubic = cubic_minimizer(x, fx, dx, t, ft, dt);
+                        mquadr = quadr_minimizer2(x, dx, t, dt);
                         if (mpfr::abs(mcubic - t) > mpfr::abs(mquadr - t)) {
-                            mcubic = cubic_minimizer(x, fx, dx, t, ft, dt);
                             newt = mcubic;
                         } else {
-                            mquadr = quadr_minimizer2(x, dx, t, dt);
                             newt = mquadr;
                         }
                     } else if (mpfr::abs(dt) < mpfr::abs(dx)) {
@@ -243,20 +242,18 @@ namespace LBFGSpp {
                            farthest away is taken.
                            */
                         bound = 1;
+                        mcubic = cubic_minimizer2(x, fx, dx, t, ft, dt, tmin, tmax);
+                        mquadr = quadr_minimizer2(x, dx, t, dt);
                         if (bracketed) {
                             if (mpfr::abs(t - mcubic) < mpfr::abs(t - mquadr)) {
-                                mcubic = cubic_minimizer2(x, fx, dx, t, ft, dt, tmin, tmax);
                                 newt = mcubic;
                             } else {
-                                mquadr = quadr_minimizer2(x, dx, t, dt);
                                 newt = mquadr;
                             }
                         } else {
                             if (mpfr::abs(t - mcubic) > mpfr::abs(t - mquadr)) {
-                                mcubic = cubic_minimizer2(x, fx, dx, t, ft, dt, tmin, tmax);
                                 newt = mcubic;
                             } else {
-                                mquadr = quadr_minimizer2(x, dx, t, dt);
                                 newt = mquadr;
                             }
                         }
@@ -365,7 +362,7 @@ namespace LBFGSpp {
                         const Scalar f_init = fout;
                         // Projection of gradient on the search direction
                         const Scalar dg_init = grad.dot(drt);
-                        // Make sure d points to a descent direction
+                        // Make sure d points in the direction of descent
                         if(dg_init > 0)
                             std::logic_error("the moving direction increases the objective function value");
                         //
@@ -416,7 +413,7 @@ namespace LBFGSpp {
                             }
                             /*
                                Compute the current value of x:
-                               x <- x + (*stp) * s.
+                               x <- x + (*stp) * drt.
                                */
                             x.noalias() = xp + step * drt;
 

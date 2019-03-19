@@ -81,12 +81,16 @@ int main(int argc, char *argv[])
     long inits {1};
     mpreal fx {mpfr::const_infinity()}, gn;
     int niter;
+    LBFGSParam<mpreal> param;
+    param.m = 40;
     switch (argc) {
-        case 6 ... INT_MAX: // only gcc and clang-compatible
-            inits = atol(argv[5]);
-        case 5: // only gcc and clang-compatible
+        case 7 ... INT_MAX: // only gcc and clang-compatible
+            inits = atol(argv[6]);
+        case 6: 
+            param.m = atoi(argv[5]);
+        case 5: 
             epsilon = argv[4];
-        case 4: // only gcc and clang-compatible
+        case 4: 
             p = atof(argv[3]);
         case 3:
             dim = atoi(argv[2]);
@@ -99,8 +103,11 @@ int main(int argc, char *argv[])
     if (argc<2)
     {
         std::cout << "This set of parameters corresponds to the following command line input: " << std::endl;
-        std::cout << "./pframe " << n << " " << dim << " " << p << " " << epsilon << " " << inits << std::endl << std::endl;
+        std::cout << "./pframe " << n << " " << dim << " " << p << " " << epsilon << " " << param.m << " " << inits  << std::endl ;
+        std::cout <<  "n" << " " << "dim" << " " << "p" << " " << "epsilon" << " " << "param.m" << " " << "inits"  << std::endl << std::endl;
     }
+    param.epsilon = mpreal("1e-"+epsilon);
+    param.min_step = mpreal("1e-"+epsilon);
 
 
     // Initialize vector parameters
@@ -112,9 +119,6 @@ int main(int argc, char *argv[])
     std::srand((unsigned int) time(0));
 
     // Initialize the solver class
-    LBFGSParam<mpreal> param;
-    param.m = 40;
-    param.epsilon = mpreal("1e-"+epsilon);
     LBFGSSolver<mpreal> solver(param); 
     Pframe fun(n, dim, p);
 

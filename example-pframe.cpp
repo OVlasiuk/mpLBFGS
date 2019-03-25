@@ -1,75 +1,10 @@
 // pframe energy optimization (unconstrained version)
 #include <iostream>
 #include <fstream>
-#include "include/mpreal.h"
-#include "include/LBFGS.h"
-#include <eigen3/Eigen/Core>
-#include <eigen3/unsupported/Eigen/MPRealSupport>
+#include "pframe.h"
 
 using namespace mpfr;
-using namespace LBFGSpp;
-
-using Eigen::Array;
-using Eigen::Matrix;
-using Eigen::Dynamic;
-using Eigen::RowMajor;
-
-typedef Matrix<mpreal,Dynamic,Dynamic, RowMajor>  MatrixXmp;
-typedef Matrix<mpreal,Dynamic,1>        VectorXmp;
-typedef Matrix<double,Dynamic,1>        VectorX;
-typedef Array<mpreal, Dynamic, Dynamic> ArrayXmp;
-
-class Pframe
-{
-private:
-    const unsigned n;
-    const unsigned dim;
-    VectorXmp tempp;  //stores pth powers of norms
-    VectorXmp temp2;  //stores squares of norms
-    mpreal p;
-    mpreal f(mpreal t) { return mpfr::pow(mpfr::abs(t), p); };  // p-th power of the absolute value
-    mpreal fprime(mpreal t) { return p * t * mpfr::pow(mpfr::abs(t), p-2); };   // derivative of f
-public:
-    Pframe(unsigned n_, unsigned dim_, mpreal p_) : n{n_}, dim{dim_}, p{p_} {
-        tempp = VectorXmp::Zero(n);
-        temp2 = VectorXmp::Zero(n);
-    }
-    mpreal operator()(const VectorXmp& x, VectorXmp& grad)
-    {
-        // Store norms in the data members
-        for(int i = 0; i < n; i++)
-        { 
-            temp2[i] = x.segment(i*dim, dim).dot(x.segment(i*dim, dim));    // squared norms of the configuration 
-            tempp[i] = mpfr::pow(temp2[i], p/mpreal("2.0"));  // p-th powers of norms of the configuration
-        }
-        // Energy
-        mpreal fx {n/mpreal("2.0")}; 
-        for(int i = 0; i < n; i++)
-            for (int j = 0; j < i; j++)
-            {
-                fx += f(x.segment(j*dim, dim).dot(x.segment(i*dim, dim))) /tempp[i] /tempp[j];
-            }
-        fx *= mpreal("2.0") / n / n;
-        // Gradient
-        grad = VectorXmp::Zero(n*dim);
-        for (int l = 0; l < dim; l++)   // iterate over coordinates
-        {
-            for(int i = 0; i < n; i++)  // iterate over vectors
-            {
-                mpreal gr  {"0"};
-                for (int j = 0; j<n; j++)
-                {
-                    mpreal prod = x.segment(j*dim, dim).dot(x.segment(i*dim, dim));
-                    gr += (
-                            fprime(prod) * x(j*dim+l) - p * x(i*dim+l) * f(prod) / temp2[i]
-                          ) / tempp[i] / tempp[j]; 
-                }
-                grad(i*dim+l) = mpreal("2") * gr / n / n; // "2" to account for i-th column and i-th row
-            }
-        }
-        return fx;
-    }
-};
+using namespace LBFGSpp; 
 
 int main(int argc, char *argv[])
 {
@@ -83,6 +18,7 @@ int main(int argc, char *argv[])
     int niter;
     LBFGSParam<mpreal> param;
     param.m = 40;
+    param.max_iterations = 1000;
     switch (argc) {
         case 7 ... INT_MAX: // only gcc and clang-compatible
             inits = atol(argv[6]);
@@ -164,6 +100,17 @@ int main(int argc, char *argv[])
         ostrm << M*M.transpose() << '\n'; 
         std::cout << "Written to file "  << filename  << std::endl;
     }
+    std::cout <<  "Output the coordinate matrix y/N? \n" ; 
+    std::cin >> yn;
+    if (yn == 'y')
+    {
+        char filename[] {"coords.txt"};
+        std::ofstream ostrm;
+        ostrm.open(filename);
+        ostrm.precision(24);
+        ostrm << M << '\n'; 
+        std::cout << "Written to file "  << filename  << std::endl;
+    }
 
     return 0;
 }
@@ -188,4 +135,17 @@ int main(int argc, char *argv[])
     // std::cout << "Evaluation at z:\t" << fun(z, grad) <<  std::endl;
     // std::cout << "Gradient at z \n" << grad <<  std::endl;
     // std::cout << "Numerical gradient at z \n" << (fun(z+dz, grad)-fun(z, grad))/dz.norm() <<  std::endl;
-    // // End tests
+    
+    //// Test gradient
+    ////
+    //VectorXmp   h(n*(dim)), z(n*(dim)), y0(n*(dim)), y1(n*(dim)); 
+    //mpreal hterm = 1e-20;
+    //for (int j = 0; j < x0.size(); j++)
+    //{
+    //    h[j] = hterm;
+    //    z[j] = (fun(x0+h, y1) - fun(x0, y0))/hterm;
+    //    h[j] = 0.0;
+    //}
+    //std::cout << (z - y0).norm() << std::endl;
+    //return 0;
+    //// Test gradient

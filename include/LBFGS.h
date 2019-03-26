@@ -99,7 +99,7 @@ namespace LBFGSpp {
                         // Initial direction
                         drt_mov.noalias() = -grad_new;
                         // Initial step
-                        Scalar step = Scalar(1.0) / drt_mov.norm();
+                        Scalar step = Scalar(1.0); // /drt_mov.norm();
 
                         int k = 1;
                         int end = 0;
@@ -176,8 +176,8 @@ namespace LBFGSpp {
                                 j = (j + 1) % m_param.m;
                             }
 
-                            // step = 1.0 as initial guess
-                            step = Scalar(1.0);
+                            // initial guess for step
+                            step = Scalar(1.0); //  /drt_mov.norm();
                             k++;
                         }
 

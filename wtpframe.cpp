@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     mpreal fx {mpfr::const_infinity()}, gn;
     int niter;
     LBFGSParam<mpreal> param;
-    param.m = 40;
+    param.m = 4;
     param.max_iterations = 1000;
     switch (argc) {
         case 7 ... INT_MAX: // only gcc and clang-compatible
@@ -106,22 +106,23 @@ int main(int argc, char *argv[])
         ostrm << M*M.transpose() << '\n'; 
         std::cout << "Written to file "  << filename  << std::endl;
     }
+    std::cout <<  "Output the coordinate matrix y/N? \n" ; 
+    std::cin >> yn;
+    if (yn == 'y')
+    {
+        char filename[] {"coords.txt"};
+        std::ofstream ostrm;
+        ostrm.open(filename);
+        ostrm.precision(24);
+        ostrm << M << '\n'; 
+        std::cout << "Written to file "  << filename  << std::endl;
+    }
 
     return 0;
 }
 
 
         ////
-        //// Test gradient
-        //VectorXmp   h(n*(dim+1)), z(n*(dim+1)), y0(n*(dim+1)), y1(n*(dim+1)); 
-        //mpreal hterm = 1e-12;
-        //for (int j = 0; j < x0.size(); j++)
-        //{
-        //    h[j] = hterm;
-        //    z[j] = (fun(x0+h, y1) - fun(x0, y0))/hterm;
-        //    h[j] = 0.0;
-        //}
-        //std::cout << (z - y0).norm() << std::endl;
         //// for (int j = 0; j < z.size(); j++)
         ////     std::cout << z[j]  << '\t' << y0[j] << std::endl;
         //// Test gradient

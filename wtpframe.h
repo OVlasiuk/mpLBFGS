@@ -75,4 +75,18 @@ public:
         }
         return fx;
     }
+
+    void testgrad(VectorXmp x0)
+    {
+        // Test gradient
+        VectorXmp   h(x0.size()), z(x0.size()), y0(x0.size()), y1(x0.size()); 
+        mpreal hterm = 1e-12;
+        for (int j = 0; j < x0.size(); j++)
+        {
+            h[j] = hterm;
+            z[j] = (this->operator()(x0+h, y1) - this->operator()(x0, y0))/hterm;
+            h[j] = 0.0;
+        }
+        std::cout << (z - y0).norm() << std::endl;
+    }
 };

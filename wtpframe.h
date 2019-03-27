@@ -38,14 +38,18 @@ public:
             tempp[i] = mpfr::pow(temp2[i], p/mpreal("2.0"));  // p-th powers of norms of the configuration
         }
         // Energy
-        mpreal fx {mpreal("0.0")}; 
+        mpreal fx {"0.0"}, wtsum {"0.0"}; 
         for(int i = 0; i < n; i++)
+        {
             for (int j = 0; j < n; j++)
             {
                 fx += x[n*dim+i]* x[n*dim+i] * x[n*dim+j] * x[n*dim+j] *
                     f(x.segment(j*dim, dim).dot(x.segment(i*dim, dim))) /tempp[i] /tempp[j];
             }
-        // fx *= mpreal("2.0");
+            wtsum += x[n*dim+i]* x[n*dim+i];
+        }
+        fx /= wtsum*wtsum;
+
         // Gradient: coordinate terms
         grad = VectorXmp::Zero(n*(dim+1));
         for (int l = 0; l < dim; l++)   // iterate over coordinates
@@ -58,8 +62,9 @@ public:
                     mpreal prod = x.segment(j*dim, dim).dot(x.segment(i*dim, dim));
                     gr += (
                             fprime(prod) * x(j*dim+l) - p * x(i*dim+l) * f(prod) / temp2[i]
-                          ) / tempp[i] / tempp[j] * x[n*dim+j] * x[n*dim+j]; 
+                          ) / tempp[j] * x[n*dim+j] * x[n*dim+j]; 
                 }
+                gr /= tempp[i] * wtsum * wtsum;
                 grad(i*dim+l) = mpreal("2") * gr * x[n*dim+i]* x[n*dim+i]; // "2" to account for i-th column and i-th row
             }
         }
@@ -69,9 +74,13 @@ public:
             mpreal gr  {"0"};
             for (int j = 0; j<n; j++)
             {
-                gr +=  f(x.segment(j*dim, dim).dot(x.segment(i*dim, dim))) /tempp[i] /tempp[j] * x[n*dim+j] * x[n*dim+j]; 
+                gr += f(x.segment(j*dim, dim).dot(x.segment(i*dim, dim))) / tempp[i] /tempp[j]
+                    *  x[n*dim+i] * x[n*dim+j] * x[n*dim+j]; 
             }
-            grad(n*dim+i) = mpreal("4") * gr * x[n*dim+i]; // "4" to account for i-th column and i-th row
+            gr *= mpreal("4"); // "2" to account for i-th column and i-th row
+            gr /=  wtsum * wtsum;
+            gr -= 4* fx * x[n*dim+i] /wtsum; // save flops by reusing the energy value 
+            grad(n*dim+i) = gr; 
         }
         return fx;
     }
@@ -87,6 +96,7 @@ public:
             z[j] = (this->operator()(x0+h, y1) - this->operator()(x0, y0))/hterm;
             h[j] = 0.0;
         }
+        std::cout << "Discrepancy between the numerical and given gradients:" << std::endl;
         std::cout << (z - y0).norm() << std::endl;
     }
 };

@@ -1,9 +1,9 @@
 targets = pframe wtpframe quadratic testmpeigen testmp
 
-pframe: example-pframe.cpp ./include/LBFGS.h ./include/descent.h
-	g++ -O3 -fopenmp -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations example-pframe.cpp -o pframe -lmpfr -lgmp
+pframe: pframe.cpp pframe.h ./include/LBFGS.h ./include/descent.h
+	g++ -O3 -fopenmp -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations pframe.cpp -o pframe -lmpfr -lgmp
 
-wtpframe: wtpframe.cpp ./include/LBFGS.h ./include/descent.h
+wtpframe: wtpframe.cpp wtpframe.h ./include/LBFGS.h ./include/descent.h
 	g++ -O3 -fopenmp -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations wtpframe.cpp -o wtpframe -lmpfr -lgmp
 
 quadratic: example-quadratic.cpp ./include/LBFGS.h

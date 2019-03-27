@@ -6,6 +6,18 @@
 using namespace mpfr;
 using namespace LBFGSpp;
 
+void normalize(VectorXmp &x, const int n, const int dim)
+{
+    mpreal temp2;
+    for(int i = 0; i < n; i++)  // TODO: this->normalize does not work with mpreals?
+    {
+        temp2 = mpfr::sqrt(x.segment(i*dim, dim).dot(x.segment(i*dim, dim))); 
+        x.segment(i*dim, dim) /= temp2;
+        x[n*dim+i] = mpfr::abs(x[n*dim+i]);
+    }
+    x.segment(n*dim, n) /= x.segment(n*dim, n).dot(x.segment(n*dim, n));
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -18,8 +30,8 @@ int main(int argc, char *argv[])
     mpreal fx {mpfr::const_infinity()}, gn;
     int niter;
     LBFGSParam<mpreal> param;
-    param.m = 4;
-    param.max_iterations = 1000;
+    param.m = 6;
+    param.max_iterations = 5000;
     switch (argc) {
         case 7 ... INT_MAX: // only gcc and clang-compatible
             inits = atol(argv[6]);
@@ -56,7 +68,7 @@ int main(int argc, char *argv[])
     std::srand((unsigned int) time(0));
 
     // Initialize the solver class
-    GradSolver<mpreal> solver(param); 
+    LBFGSSolver<mpreal> solver(param); 
     wtPframe fun(n, dim, p);
 
     // std::cout << "mpfr random\n" << mpfr::random((unsigned int) time(0)) << std::endl; 
@@ -66,13 +78,9 @@ int main(int argc, char *argv[])
         VectorXmp  x0(n*(dim+1));
         y = VectorX::Random(n*(dim+1)); // random starting config
         x0 = y.cast<mpreal>();  // TODO: VectorXmp::Random does not work?  
-        // std::cout << x0 << std::endl << std::endl;
-        // std::cout << n << std::endl;
-        // std::cout << x.segment(n*dim, n) << std::endl << std::endl;
-        // std::cout << x.segment(n*dim, n).dot(x.segment(n*dim, n)) << std::endl;
-        x0.segment(n*dim, n) /= mpfr::sqrt(x0.segment(n*dim, n).dot(x0.segment(n*dim, n))); 
+        normalize(x0, n, dim);
 
-        niter = solver.minimize(fun, x0, f0, gn, dim);
+        niter = solver.minimize(fun, x0, f0, gn);
         if (f0 < fx)
         {
             fx = f0;
@@ -81,15 +89,8 @@ int main(int argc, char *argv[])
         std::cout << niter << " iterations" << std::endl;
     }
 
-    Eigen::Map<MatrixXmp> M(x.data(), n,dim); 
-    VectorXmp temp2 = VectorXmp::Zero(n);
-    for(int i = 0; i < n; i++)  // TODO: this->normalize does not work with mpreals?
-    {
-        temp2[i] = mpfr::sqrt(x.segment(i*dim, dim).dot(x.segment(i*dim, dim))); 
-    }
-    for(int i = 0; i < n; i++)
-        M.row(i) /= temp2[i];
-    //
+    normalize(x, n, dim);
+    Eigen::Map<MatrixXmp> M(x.head(n*dim).data(), n,dim), W(x.tail(n).data(), n,1); 
     
     std::cout.precision(24);
     std::cout << "f(x) = " << fx << std::endl;
@@ -106,16 +107,23 @@ int main(int argc, char *argv[])
         ostrm << M*M.transpose() << '\n'; 
         std::cout << "Written to file "  << filename  << std::endl;
     }
-    std::cout <<  "Output the coordinate matrix y/N? \n" ; 
+    std::cout <<  "Output coordinates and weights y/N? \n" ; 
     std::cin >> yn;
     if (yn == 'y')
     {
-        char filename[] {"coords.txt"};
+        char filename[] {"coords.txt"}, wtname[] {"weights.txt"};
         std::ofstream ostrm;
         ostrm.open(filename);
         ostrm.precision(24);
         ostrm << M << '\n'; 
-        std::cout << "Written to file "  << filename  << std::endl;
+        ostrm.close();
+
+        ostrm.open(wtname);
+        ostrm.precision(24);
+        ostrm << W << '\n'; 
+        std::cout << "Coordinates written to file "  << filename  << std::endl;
+        std::cout << "Weights written to file "  << wtname  << std::endl;
+        ostrm.close();
     }
 
     return 0;

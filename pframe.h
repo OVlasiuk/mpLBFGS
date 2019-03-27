@@ -61,8 +61,9 @@ public:
                     mpreal prod = x.segment(j*dim, dim).dot(x.segment(i*dim, dim));
                     gr += (
                             fprime(prod) * x(j*dim+l) - p * x(i*dim+l) * f(prod) / temp2[i]
-                          ) / tempp[i] / tempp[j]; 
+                          ) / tempp[j]; 
                 }
+                gr /= tempp[i];
                 grad(i*dim+l) = mpreal("2") * gr / n / n; // "2" to account for i-th column and i-th row
             }
         }
@@ -80,6 +81,7 @@ public:
             z[j] = (this->operator()(x0+h, y1) - this->operator()(x0, y0))/hterm;
             h[j] = 0.0;
         }
+        std::cout << "Discrepancy between the numerical and given gradients:" << std::endl;
         std::cout << (z - y0).norm() << std::endl;
     }
 };

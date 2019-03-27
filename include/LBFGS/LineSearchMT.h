@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 #include <stdexcept>  // for std::runtime_error 
 #include "mpreal.h"
+#include <eigen3/unsupported/Eigen/MPRealSupport>
 
 namespace LBFGSpp { 
     //
@@ -491,8 +492,8 @@ namespace LBFGSpp {
                                Force a sufficient decrease in the interval of uncertainty.
                                */
                             if (bracketed) {
-                                if (0.66 * prev_width <= mpfr::abs(sty - stx)) {
-                                    step = stx + 0.5 * (sty - stx);
+                                if (mpfr::mpreal("0.66") * prev_width <= mpfr::abs(sty - stx)) {
+                                    step = stx + mpfr::mpreal("0.5") * (sty - stx);
                                 }
                                 prev_width = width;
                                 width = mpfr::abs(sty - stx);

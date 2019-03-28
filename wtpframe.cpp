@@ -15,7 +15,7 @@ void normalize(VectorXmp &x, const int n, const int dim)
         x.segment(i*dim, dim) /= temp2;
         x[n*dim+i] = mpfr::abs(x[n*dim+i]);
     }
-    x.segment(n*dim, n) /= x.segment(n*dim, n).dot(x.segment(n*dim, n));
+    // x.segment(n*dim, n) /= x.segment(n*dim, n).dot(x.segment(n*dim, n));
 }
 
 
@@ -90,6 +90,9 @@ int main(int argc, char *argv[])
     }
 
     normalize(x, n, dim);
+    for(int i=0; i < n; i++)
+        x.tail(n)[i] *= x.tail(n)[i];
+    x.segment(n*dim, n) /= x.segment(n*dim, n).sum();
     Eigen::Map<MatrixXmp> M(x.head(n*dim).data(), n,dim), W(x.tail(n).data(), n,1); 
     
     std::cout.precision(24);

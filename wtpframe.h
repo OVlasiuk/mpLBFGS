@@ -38,14 +38,17 @@ public:
             tempp[i] = mpfr::pow(temp2[i], p/mpreal("2.0"));  // p-th powers of norms of the configuration
         }
         // Energy
-        mpreal fx {"0.0"}, wtsum {"0.0"}; 
+        mpreal fx {"0.0"}, wtsum {"0.0"}, jterms; 
         for(int i = 0; i < n; i++)
         {
+            jterms = 0.0;
             for (int j = 0; j < n; j++)
             {
-                fx += x[n*dim+i]* x[n*dim+i] * x[n*dim+j] * x[n*dim+j] *
-                    f(x.segment(j*dim, dim).dot(x.segment(i*dim, dim))) /tempp[i] /tempp[j];
+                jterms += x[n*dim+j] * x[n*dim+j] *
+                    f(x.segment(j*dim, dim).dot(x.segment(i*dim, dim))) / tempp[j];
             }
+            jterms *= x[n*dim+i] * x[n*dim+i] / tempp[i];  
+            fx += jterms;
             wtsum += x[n*dim+i]* x[n*dim+i];
         }
         fx /= wtsum*wtsum;
@@ -74,13 +77,11 @@ public:
             mpreal gr  {"0"};
             for (int j = 0; j<n; j++)
             {
-                gr += f(x.segment(j*dim, dim).dot(x.segment(i*dim, dim))) / tempp[i] /tempp[j]
-                    *  x[n*dim+i] * x[n*dim+j] * x[n*dim+j]; 
+                gr += f(x.segment(j*dim, dim).dot(x.segment(i*dim, dim)))  /tempp[j] *  x[n*dim+j] * x[n*dim+j]; 
             }
-            gr *= mpreal("4"); // "2" to account for i-th column and i-th row
-            gr /=  wtsum * wtsum;
-            gr -= 4* fx * x[n*dim+i] /wtsum; // save flops by reusing the energy value 
-            grad(n*dim+i) = gr; 
+            gr /= tempp[i] * wtsum * wtsum;
+            gr -= fx /wtsum; // save flops by reusing the energy value 
+            grad(n*dim+i) = 4 * x[n*dim+i] * gr; 
         }
         return fx;
     }

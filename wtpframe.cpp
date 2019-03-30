@@ -1,6 +1,7 @@
-// pframe energy optimization (unconstrained version)
+// weighted pframe energy optimization 
 #include <iostream>
 #include <fstream>
+#include <getopt.h>
 #include "wtpframe.h"
 
 using namespace mpfr;
@@ -21,40 +22,114 @@ void normalize(VectorXmp &x, const int n, const int dim)
 
 int main(int argc, char *argv[])
 {
-    // Initialize scalar parameters
+    // Optimization parameters
     unsigned n  {12};
     unsigned dim  {3};
     mpreal p {"3"};
     std::string epsilon {"20"}, epsilon_step {"20"};
-    long inits {1};
+    long inits {1}; 
+    // Output parameters
     mpreal fx {mpfr::const_infinity()}, gn;
-    int niter;
+    int niter; 
+    // Solver parameter class
     LBFGSParam<mpreal> param;
     param.m = 6;
     param.max_iterations = 5000;
-    switch (argc) {
-        case 7 ... INT_MAX: // only gcc and clang-compatible
-            inits = atol(argv[6]);
-        case 6: 
-            param.m = atoi(argv[5]);
-        case 5: 
-            epsilon = argv[4];
-        case 4: 
-            p = atof(argv[3]);
-        case 3:
-            dim = atoi(argv[2]);
-        case 2:
-            n = atoi(argv[1]);
+    // Output options
+    bool gram {false}, coord {false};
+
+
+    // Parse command line input
+    int c; 
+    while (1) {
+        int option_index = 0;
+        static struct option long_options[] = {
+            {"n"       , required_argument , 0 , 'n' } ,
+            {"dim"     , required_argument , 0 , 'd' } ,
+            {"p"       , required_argument , 0 , 'p' } ,
+            {"epsilon" , required_argument , 0 , 'e' } ,
+            {"m"       , required_argument , 0 , 'm' } ,
+            {"inits"   , required_argument , 0 , 'i' } ,
+            {"gram"    , no_argument       , 0 , 'g' } ,
+            {"coord"   , no_argument       , 0 , 'c' } ,
+            {0         , 0                 , 0 , 0   }
+        };
+
+        c = getopt_long(argc, argv, "n:d:p:e:m:i:gc",
+                long_options, &option_index);
+        if (c == -1)
+            break;
+
+        switch (c) {
+            case 0:
+                printf("option %s", long_options[option_index].name);
+                if (optarg)
+                    printf(" with arg %s", optarg);
+                printf("\n");
+                break;
+
+            case 'n':
+                n = atoi(optarg); 
+                break; 
+            case 'd':
+                dim = atoi(optarg);
+                break; 
+            case 'p':
+                p = atof(optarg);
+                break; 
+            case 'e':
+                epsilon = optarg;
+                break; 
+            case 'm':
+                param.m = atoi(optarg);
+                break; 
+            case 'i':
+                inits = atol(optarg);
+                break; 
+            case 'g':
+                gram = true;
+                break; 
+            case 'c':
+                coord = true;
+                break; 
+            case '?':
+                break; 
+            default:
+                printf("?? getopt returned character code 0%o ??\n", c);
+        }
     }
+    if (optind < argc) {
+        printf("Non-recognized arguments:");
+        while (optind < argc)
+            printf("%s ", argv[optind++]);
+        printf("\n");
+    }
+    char pstring[10];
+    sprintf(pstring, "%.3f",double(p));
+    // Done parsing command line input
+
+
+    // Talk to the user
     std::cout << "Parameter values:" << std::endl;
-    std::cout << "n = " << n <<  "\t\t" << "dim = " << dim <<  "\t\t" << "p = " << p <<  "\t\t" << "-log10(epsilon) = " << epsilon <<  std::endl;
-    std::cout << "Performing initializations: " << inits <<  std::endl << std::endl;
+    std::printf("n = %d\t\tdim = %d\t\tp = %s\
+            \n-log10(epsilon) = %s\t\tparam.m = %d\n",
+            n, dim, pstring, 
+            epsilon.c_str(), param.m);
+    // std::cout << "n = " << n <<  "\t\t" << "dim = " << dim <<  "\t\t" << "p = " << p <<  "\t\t" << "-log10(epsilon) = " << epsilon <<  std::endl;
+    std::cout << "Initializations: " << inits <<  std::endl << std::endl;
+
     if (argc<2)
     {
         std::cout << "This set of parameters corresponds to the following command line input: " << std::endl;
-        std::cout << "./pframe " << n << " " << dim << " " << p << " " << epsilon << " " << param.m << " " << inits  << std::endl ;
-        std::cout <<  "n" << " " << "dim" << " " << "p" << " " << "epsilon" << " " << "param.m" << " " << "inits"  << std::endl << std::endl;
+        std::printf("./pframe -n %d -d %d -p %s -e %s -m %d -i %ld\n",
+                n, dim, pstring, epsilon.c_str(), param.m, inits);
+        std::printf("Long options are also supported:\n\
+                --n       --dim     --p      \n\
+                --epsilon --m       --inits  \n\
+                --gram    --coord\n");
     }
+    // Done talking to the user
+
     param.epsilon = mpreal("1e-"+epsilon);
     param.min_step = mpreal("1e-"+epsilon_step);
 
@@ -63,7 +138,7 @@ int main(int argc, char *argv[])
     VectorXmp x(n*(dim+1));
     VectorX y(n*(dim+1));
 
-    // Initialize system parameters
+    // Initialize library parameters
     mpreal::set_default_prec(mpfr::digits2bits(100));
     std::srand((unsigned int) time(0));
 
@@ -98,23 +173,31 @@ int main(int argc, char *argv[])
     std::cout.precision(24);
     std::cout << "f(x) = " << fx << std::endl;
     std::cout <<  "Gradient norm \n" << gn  << std::endl; 
-    std::cout <<  "Output the Gram matrix y/N? \n" ; 
-    char yn;
-    std::cin >> yn;
-    if (yn == 'y')
+
+    if ( gram )
     {
-        char filename[] {"grammatrix.txt"};
+        std::string filename;
+        filename =  "grammatrix_" 
+            + std::to_string(dim) + "_"
+            + std::to_string(n) + "_"
+            + std::string(pstring) + ".txt";
         std::ofstream ostrm;
         ostrm.open(filename);
         ostrm.precision(24);
         ostrm << M*M.transpose() << '\n'; 
-        std::cout << "Written to file "  << filename  << std::endl;
+        std::cout << "\nThe gram matrix is written to file\n  "  << filename  << std::endl;
     }
-    std::cout <<  "Output coordinates and weights y/N? \n" ; 
-    std::cin >> yn;
-    if (yn == 'y')
+    if ( coord )
     {
-        char filename[] {"coords.txt"}, wtname[] {"weights.txt"};
+        std::string filename, wtname;
+        filename =  "coords_" 
+            + std::to_string(dim) + "_"
+            + std::to_string(n) + "_"
+            + std::string(pstring) + ".txt";
+        wtname =  "weights_" 
+            + std::to_string(dim) + "_"
+            + std::to_string(n) + "_"
+            + std::string(pstring) + ".txt";
         std::ofstream ostrm;
         ostrm.open(filename);
         ostrm.precision(24);
@@ -124,8 +207,8 @@ int main(int argc, char *argv[])
         ostrm.open(wtname);
         ostrm.precision(24);
         ostrm << W << '\n'; 
-        std::cout << "Coordinates written to file "  << filename  << std::endl;
-        std::cout << "Weights written to file "  << wtname  << std::endl;
+        std::cout << "Coordinates written to file\n  "  << filename  << std::endl;
+        std::cout << "Weights written to file\n  "  << wtname  << std::endl;
         ostrm.close();
     }
 

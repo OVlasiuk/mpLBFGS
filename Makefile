@@ -4,7 +4,7 @@ pframe: pframe.cpp pframe.h ./include/LBFGS.h ./include/descent.h
 	g++ -O3 -fopenmp -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations pframe.cpp -o pframe -lmpfr -lgmp
 
 wtpframe: wtpframe.cpp wtpframe.h ./include/LBFGS.h ./include/descent.h
-	g++ -O2 -fopenmp -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations wtpframe.cpp -o wtpframe -lmpfr -lgmp
+	g++ -O3 -fopenmp -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations wtpframe.cpp -o wtpframe -lmpfr -lgmp
 
 quadratic: example-quadratic.cpp ./include/LBFGS.h
 	g++ -O3 -fopenmp -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations example-quadratic.cpp -o quadratic -lmpfr -lgmp

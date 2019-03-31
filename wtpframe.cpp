@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     param.m = 6;
     param.max_iterations = 5000;
     // Output options
-    bool gram {false}, coord {false};
+    bool gram {false}, coord {false}, help {false};
 
 
     // Parse command line input
@@ -52,10 +52,11 @@ int main(int argc, char *argv[])
             {"inits"   , required_argument , 0 , 'i' } ,
             {"gram"    , no_argument       , 0 , 'g' } ,
             {"coord"   , no_argument       , 0 , 'c' } ,
+            {"help"    , no_argument       , 0 , 'h' } ,
             {0         , 0                 , 0 , 0   }
         };
 
-        c = getopt_long(argc, argv, "n:d:p:e:m:i:gc",
+        c = getopt_long(argc, argv, "n:d:p:e:m:i:gch",
                 long_options, &option_index);
         if (c == -1)
             break;
@@ -92,6 +93,9 @@ int main(int argc, char *argv[])
             case 'c':
                 coord = true;
                 break; 
+            case 'h':
+                help = true;
+                break; 
             case '?':
                 break; 
             default:
@@ -111,23 +115,28 @@ int main(int argc, char *argv[])
 
     // Talk to the user
     std::cout << "Parameter values:" << std::endl;
-    std::printf("n = %d\t\tdim = %d\t\tp = %s\
+    std::printf("n = %d\t\tdim = %d \tp = %s\
             \n-log10(epsilon) = %s\t\tparam.m = %d\n",
             n, dim, pstring, 
             epsilon.c_str(), param.m);
     // std::cout << "n = " << n <<  "\t\t" << "dim = " << dim <<  "\t\t" << "p = " << p <<  "\t\t" << "-log10(epsilon) = " << epsilon <<  std::endl;
-    std::cout << "Initializations: " << inits <<  std::endl << std::endl;
+    std::cout << "Initializations: " << inits  << std::endl;
+    std::cout << "Write gram matrix: " << (gram ?  "Yes" : "No") <<   std::endl;
+    std::cout << "Write coordinate matrix: " << (coord ?  "Yes" : "No") << std::endl <<  std::endl;
 
-    if (argc<2)
+    if (argc<2 || help)
     {
         std::cout << "This set of parameters corresponds to the following command line input: " << std::endl;
-        std::printf("./pframe -n %d -d %d -p %s -e %s -m %d -i %ld\n",
-                n, dim, pstring, epsilon.c_str(), param.m, inits);
+        std::printf("./pframe -n %d -d %d -p %s -e %s -m %d -i %ld %s%s\n",
+                n, dim, pstring, epsilon.c_str(), param.m, inits,
+                (gram ?  "-g " : ""), (coord ?  "-c" : ""));
         std::printf("Long options are also supported:\n\
                 --n       --dim     --p      \n\
                 --epsilon --m       --inits  \n\
-                --gram    --coord\n");
+                --gram    --coord   --help\n");
     }
+    if (help)
+        return 0;
     // Done talking to the user
 
     param.epsilon = mpreal("1e-"+epsilon);

@@ -1,6 +1,5 @@
 #include "include/mpreal.h"
 #include "include/LBFGS.h"
-#include "include/descent.h"
 #include <eigen3/Eigen/Core>
 #include <eigen3/unsupported/Eigen/MPRealSupport>
 

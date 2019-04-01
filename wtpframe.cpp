@@ -27,17 +27,18 @@ int main(int argc, char *argv[])
     unsigned n  {12};
     unsigned dim  {3};
     mpreal p {"3"};
-    std::string epsilon {"20"}, epsilon_step {"20"};
+    std::string epsilon {"20"}, epsilon_step {"40"};
     long inits {1}; 
+    const unsigned history {5};
     // Output parameters
-    mpreal fx {mpfr::const_infinity()}, gn;
+    mpreal fx {mpfr::const_infinity()}, gx {mpfr::const_infinity()}, gn;
     int niter; 
     // Solver parameter class
     LBFGSParam<mpreal> param;
     param.m = 6;
     param.max_iterations = 5000;
     // Output options
-    bool gram {false}, coord {false}, help {false};
+    bool gram {false}, coord {false}, help {false}, stage2 {true};
 
 
     // Parse command line input
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
             {0         , 0                 , 0 , 0   }
         };
 
-        c = getopt_long(argc, argv, "n:d:p:e:m:i:gch",
+        c = getopt_long(argc, argv, "1n:d:p:e:m:i:gch",
                 long_options, &option_index);
         if (c == -1)
             break;
@@ -93,6 +94,9 @@ int main(int argc, char *argv[])
                 break; 
             case 'c':
                 coord = true;
+                break; 
+            case '1':
+                stage2 = false;
                 break; 
             case 'h':
                 help = true;
@@ -143,6 +147,7 @@ int main(int argc, char *argv[])
 
     // Initialize vector parameters
     VectorXmp x(n*(dim+1));
+    MatrixXmp X(n*(dim+1), history);
     VectorX y(n*(dim+1));
 
     // Initialize library parameters
@@ -153,28 +158,82 @@ int main(int argc, char *argv[])
     std::mt19937 gen{rd()}; // Mersenne twister
     std::normal_distribution<double> d{0,1}; 
 
-    // Initialize the solver class
-    param.epsilon = mpreal("1e-"+epsilon);
-    param.min_step = mpreal("1e-"+epsilon_step);
-    LBFGSSolver<mpreal> solver(param); 
-    wtPframe fun(n, dim, p);
 
     // std::cout << "mpfr random\n" << mpfr::random((unsigned int) time(0)) << std::endl; 
-    for (int i = 0; i < inits; i++)
+    if (stage2)
     {
-        mpreal f0;
-        VectorXmp  x0(n*(dim+1));
-        for (int j = 0; j < n*(dim+1); j++)
-            x0[j] = d(rd);
-        normalize(x0, n, dim);
-
-        niter = solver.minimize(fun, x0, f0, gn);
-        if (f0 < fx)
+        // Initialize the solver class
+        param.epsilon = mpfr::sqrt(mpreal("1e-"+epsilon));
+        param.min_step = mpreal("1e-"+epsilon_step);
+        LBFGSSolver<mpreal> solver(param); 
+        wtPframe fun(n, dim, p);
+        unsigned hist = 0;
+        for (int i = 0; i < inits; i++)
         {
-            fx = f0;
-            x = x0;
+            mpreal f0;
+            VectorXmp  x0(n*(dim+1));
+            for (int j = 0; j < n*(dim+1); j++)
+                x0[j] = d(rd);
+            normalize(x0, n, dim);
+
+            niter = solver.minimize(fun, x0, f0, gn);
+            if (f0 < fx)
+            {
+                fx = f0;
+                X.col(hist++ % history) = x0;
+            }
+            std::cout << niter << " iterations" << std::endl;
         }
-        std::cout << niter << " iterations" << std::endl;
+
+        std::cout << std::endl << "Stage 2 optimization using " << std::min(hist, history) << " lowest values from stage 1:" << std::endl;
+
+        // New solver class
+        param.epsilon = mpreal("1e-"+epsilon);
+        param.min_step = mpreal("1e-"+epsilon_step);
+        LBFGSSolver<mpreal> solver1(param); 
+        fx = mpfr::const_infinity();
+        for (int i = 0; i<std::min(hist, history); i++)
+        {
+            mpreal f0; 
+            VectorXmp  x0(n*(dim+1));
+            x0 = X.col(i); 
+            normalize(x0, n, dim);
+
+            niter = solver1.minimize(fun, x0, f0, gn);
+            if (f0 < fx)
+            {
+                fx = f0;
+                x = x0;
+                gx = gn;
+            }
+            std::cout << niter << " iterations" << std::endl;
+        }
+    }
+    else
+    {
+        // Initialize the solver class
+        param.epsilon = mpreal("1e-"+epsilon);
+        param.min_step = mpreal("1e-"+epsilon_step);
+        LBFGSSolver<mpreal> solver(param); 
+        wtPframe fun(n, dim, p);
+        for (int i = 0; i < inits; i++)
+        {
+            mpreal f0;
+            VectorXmp  x0(n*(dim+1));
+            for (int j = 0; j < n*(dim+1); j++)
+                x0[j] = d(rd);
+            normalize(x0, n, dim);
+
+            niter = solver.minimize(fun, x0, f0, gn);
+            if (f0 < fx)
+            {
+                fx = f0;
+                x = x0;
+                gx = gn;
+            }
+            std::cout << niter << " iterations" << std::endl;
+        }
+
     }
 
     normalize(x, n, dim);
@@ -185,7 +244,7 @@ int main(int argc, char *argv[])
     
     std::cout.precision(24);
     std::cout << "f(x) = " << fx << std::endl;
-    std::cout <<  "Gradient norm \n" << gn  << std::endl; 
+    std::cout <<  "Gradient norm \n" << gx  << std::endl; 
 
     if ( gram )
     {
@@ -227,31 +286,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-
-        ////
-        //// for (int j = 0; j < z.size(); j++)
-        ////     std::cout << z[j]  << '\t' << y0[j] << std::endl;
-        //// Test gradient
-        ////
-        //return 0;
-
-
-
-    // // Tests
-    // VectorX y = VectorX(n*dim);
-    // VectorXmp dz = VectorXmp(n*dim);
-    //     // ::Random(n*dim);
-    // y << 1, 3, 0, 1 ; 
-    // dz << 1e-12, 0, 0, 0; 
-
-    // VectorXmp z = y.cast<mpreal>(); 
-    // dz = dz.cast<mpreal>(); 
-    // for (int i=0; i<2; i++)
-    //     z(i) = mpfr::sqrt(z(i)); 
-    // std::cout << "Vector value \n" << z <<  std::endl;
-    // // std::cout << "evaluation at y \n" << fun(y, grad) <<  std::endl;
-    // std::cout << "Evaluation at z:\t" << fun(z, grad) <<  std::endl;
-    // std::cout << "Gradient at z \n" << grad <<  std::endl;
-    // std::cout << "Numerical gradient at z \n" << (fun(z+dz, grad)-fun(z, grad))/dz.norm() <<  std::endl;
-    // // End tests

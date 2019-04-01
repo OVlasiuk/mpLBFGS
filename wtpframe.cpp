@@ -1,6 +1,7 @@
 // weighted pframe energy optimization 
 #include <iostream>
 #include <fstream>
+#include <random>
 #include <getopt.h>
 #include "wtpframe.h"
 
@@ -139,9 +140,6 @@ int main(int argc, char *argv[])
         return 0;
     // Done talking to the user
 
-    param.epsilon = mpreal("1e-"+epsilon);
-    param.min_step = mpreal("1e-"+epsilon_step);
-
 
     // Initialize vector parameters
     VectorXmp x(n*(dim+1));
@@ -149,9 +147,15 @@ int main(int argc, char *argv[])
 
     // Initialize library parameters
     mpreal::set_default_prec(mpfr::digits2bits(100));
-    std::srand((unsigned int) time(0));
+
+    // Initialize random device
+    std::random_device rd{};
+    std::mt19937 gen{rd()}; // Mersenne twister
+    std::normal_distribution<double> d{0,1}; 
 
     // Initialize the solver class
+    param.epsilon = mpreal("1e-"+epsilon);
+    param.min_step = mpreal("1e-"+epsilon_step);
     LBFGSSolver<mpreal> solver(param); 
     wtPframe fun(n, dim, p);
 
@@ -160,8 +164,8 @@ int main(int argc, char *argv[])
     {
         mpreal f0;
         VectorXmp  x0(n*(dim+1));
-        y = VectorX::Random(n*(dim+1)); // random starting config
-        x0 = y.cast<mpreal>();  // TODO: VectorXmp::Random does not work?  
+        for (int j = 0; j < n*(dim+1); j++)
+            x0[j] = d(rd);
         normalize(x0, n, dim);
 
         niter = solver.minimize(fun, x0, f0, gn);

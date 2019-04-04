@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     // Solver parameter class
     LBFGSParam<mpreal> param;
     param.m = 6;
-    param.max_iterations = 5000;
+    param.max_iterations = 10000;
     // Output options
     bool gram {false}, coord {false}, help {false}, stage2 {true};
 
@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
                 break; 
             case '?':
                 break; 
+
             default:
                 printf("?? getopt returned character code 0%o ??\n", c);
         }
@@ -126,6 +127,7 @@ int main(int argc, char *argv[])
             epsilon.c_str(), param.m);
     // std::cout << "n = " << n <<  "\t\t" << "dim = " << dim <<  "\t\t" << "p = " << p <<  "\t\t" << "-log10(epsilon) = " << epsilon <<  std::endl;
     std::cout << "Initializations: " << inits  << std::endl;
+    std::cout << "2-stage optimization: " << (stage2 ?  "Yes" : "No") <<   std::endl;
     std::cout << "Write gram matrix: " << (gram ?  "Yes" : "No") <<   std::endl;
     std::cout << "Write coordinate matrix: " << (coord ?  "Yes" : "No") << std::endl <<  std::endl;
 

@@ -39,38 +39,31 @@ int main(int argc, char *argv[])
     param.max_iterations = 10000;
     // Output options
     bool gram {false}, coord {false}, help {false}, stage2 {true};
+    int option_index = 0;
+    static struct option long_options[] = {
+        {"n"       , required_argument , 0 , 'n' } ,
+        {"dim"     , required_argument , 0 , 'd' } ,
+        {"p"       , required_argument , 0 , 'p' } ,
+        {"epsilon" , required_argument , 0 , 'e' } ,
+        {"m"       , required_argument , 0 , 'm' } ,
+        {"inits"   , required_argument , 0 , 'i' } ,
+        {"gram"    , no_argument       , 0 , 'g' } ,
+        {"coord"   , no_argument       , 0 , 'c' } ,
+        {"help"    , no_argument       , 0 , 'h' } ,
+        {0         , 0                 , 0 , 0   }
+    };
 
 
     // Parse command line input
     int c; 
-    while (1) {
-        int option_index = 0;
-        static struct option long_options[] = {
-            {"n"       , required_argument , 0 , 'n' } ,
-            {"dim"     , required_argument , 0 , 'd' } ,
-            {"p"       , required_argument , 0 , 'p' } ,
-            {"epsilon" , required_argument , 0 , 'e' } ,
-            {"m"       , required_argument , 0 , 'm' } ,
-            {"inits"   , required_argument , 0 , 'i' } ,
-            {"gram"    , no_argument       , 0 , 'g' } ,
-            {"coord"   , no_argument       , 0 , 'c' } ,
-            {"help"    , no_argument       , 0 , 'h' } ,
-            {0         , 0                 , 0 , 0   }
-        };
-
-        c = getopt_long(argc, argv, "1n:d:p:e:m:i:gch",
-                long_options, &option_index);
-        if (c == -1)
-            break;
-
+    while ((c = getopt_long(argc, argv, "1n:d:p:e:m:i:gch", long_options, &option_index)) != -1) { 
         switch (c) {
             case 0:
                 printf("option %s", long_options[option_index].name);
                 if (optarg)
                     printf(" with arg %s", optarg);
                 printf("\n");
-                break;
-
+                break; 
             case 'n':
                 n = atoi(optarg); 
                 break; 
@@ -107,7 +100,8 @@ int main(int argc, char *argv[])
             default:
                 printf("?? getopt returned character code 0%o ??\n", c);
         }
-    }
+    }; 
+    
     if (optind < argc) {
         printf("Non-recognized arguments:");
         while (optind < argc)

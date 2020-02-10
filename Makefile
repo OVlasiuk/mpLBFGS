@@ -1,19 +1,21 @@
 targets = pframe wtpframe quadratic testmpeigen testmp
+FLAGS = -std=c++11 -O3 -Wno-deprecated-declarations
+LIBS = -lmpfr -lgmp
 
 wtpframe: wtpframe.cpp wtpframe.h ./include/LBFGS.h
-	g++ -O3 -fopenmp -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations wtpframe.cpp -o wtpframe -lmpfr -lgmp
+	g++ $(FLAGS) -Iinclude -I/usr/include/eigen3 wtpframe.cpp -o wtpframe $(LIBS)
 
 pframe: pframe.cpp pframe.h ./include/LBFGS.h ./include/descent.h
-	g++ -O3 -fopenmp -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations pframe.cpp -o pframe -lmpfr -lgmp
+	g++ $(FLAGS) -Iinclude -I/usr/include/eigen3  pframe.cpp -o pframe $(LIBS)
 
 quadratic: example-quadratic.cpp ./include/LBFGS.h
-	g++ -O3 -fopenmp -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations example-quadratic.cpp -o quadratic -lmpfr -lgmp
+	g++ $(FLAGS) -Iinclude -I/usr/include/eigen3 example-quadratic.cpp -o quadratic $(LIBS)
 
 testmpeigen: testmpeigen.cpp
-	g++ -O2 -Iinclude -I/usr/include/eigen3 -Wno-deprecated-declarations testmpeigen.cpp -o testmpeigen -lmpfr -lgmp 
+	g++ $(FLAGS) -Iinclude -I/usr/include/eigen3 testmpeigen.cpp -o testmpeigen $(LIBS) 
 
 testmp: testmp.cpp
-	g++ -O2 -Wno-deprecated-declarations testmp.cpp -o testmp -lmpfr -lgmp 
+	g++ $(FLAGS) testmp.cpp -o testmp $(LIBS)
 
 getmpfr:
 	wget -o mpfrcpp.zip "http://www.holoborodko.com/pavel/downloads/mpfrc++-3.6.2.zip" 

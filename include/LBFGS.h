@@ -5,8 +5,6 @@
 #define LBFGS_H
 
 #include <eigen3/Eigen/Core>
-#include "LBFGS/Param.h"
-#include "LBFGS/LineSearch.h"
 #include "LBFGS/LineSearchMT.h"
 
 

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(wtpframe)
 set(CMAKE_BUILD_TYPE Release)
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)

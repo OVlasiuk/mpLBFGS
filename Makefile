@@ -1,18 +1,19 @@
 targets = pframe wtpframe quadratic testmpeigen testmp
 FLAGS = -std=c++11 -O3 -Wno-deprecated-declarations
 LIBS = -lmpfr -lgmp
+INCLUDES = -Iinclude -I/usr/include/eigen3
 
 wtpframe: wtpframe.cpp wtpframe.h ./include/LBFGS.h
-	g++ $(FLAGS) -Iinclude -I/usr/include/eigen3 wtpframe.cpp -o wtpframe $(LIBS)
+	g++ $(FLAGS) $(INCLUDES) wtpframe.cpp -o wtpframe $(LIBS)
 
 pframe: pframe.cpp pframe.h ./include/LBFGS.h ./include/descent.h
-	g++ $(FLAGS) -Iinclude -I/usr/include/eigen3  pframe.cpp -o pframe $(LIBS)
+	g++ $(FLAGS) $(INCLUDES)  pframe.cpp -o pframe $(LIBS)
 
 quadratic: example-quadratic.cpp ./include/LBFGS.h
-	g++ $(FLAGS) -Iinclude -I/usr/include/eigen3 example-quadratic.cpp -o quadratic $(LIBS)
+	g++ $(FLAGS) $(INCLUDES) example-quadratic.cpp -o quadratic $(LIBS)
 
 testmpeigen: testmpeigen.cpp
-	g++ $(FLAGS) -Iinclude -I/usr/include/eigen3 testmpeigen.cpp -o testmpeigen $(LIBS) 
+	g++ $(FLAGS) $(INCLUDES) testmpeigen.cpp -o testmpeigen $(LIBS) 
 
 testmp: testmp.cpp
 	g++ $(FLAGS) testmp.cpp -o testmp $(LIBS)

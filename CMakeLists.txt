@@ -19,5 +19,5 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wno-deprecated-declarations") # -Wall 
 
 include_directories( "./include" ) 
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
-add_executable (wtpframe wtpframe.h wtpframe.cpp) 
+add_executable (wtpframe include/wtpframe.h wtpframe.cpp) 
 target_link_libraries (wtpframe Eigen3::Eigen mpfr gmp) 

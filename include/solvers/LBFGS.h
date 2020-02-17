@@ -5,7 +5,8 @@
 #define LBFGS_H
 
 #include <eigen3/Eigen/Core>
-#include "LBFGS/LineSearchMT.h"
+#include "Param.h"
+#include "linesearch/LineSearch.h"
 
 
 namespace LBFGSpp {
@@ -101,7 +102,7 @@ namespace LBFGSpp {
 
                         int k = 1;
                         int end = 0;
-                        for( ; ; )
+                        while(true)
                         {
                             // Save the curent x and gradient
                             x_old.noalias() = x;
@@ -109,7 +110,7 @@ namespace LBFGSpp {
 
                             // Line search to update x, fx and gradient
                             //
-                            LineSearchMT<Scalar>::MoreThuente(f, fx, x, grad_new, step, drt_mov, x_old, m_param);
+                            LineSearch<Scalar>::Backtracking(f, fx, x, grad_new, step, drt_mov, x_old, m_param);
 
                             // New x norm and gradient norm
                             xnorm = x.norm();

@@ -21,3 +21,9 @@ include_directories( "./include" )
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 add_executable (wtpframe include/wtpframe.h wtpframe.cpp) 
 target_link_libraries (wtpframe Eigen3::Eigen mpfr gmp) 
+
+# add_custom_command(TARGET ${PROJECT_NAME}
+#     POST_BUILD
+#     COMMAND mv compile_commands.json ../
+#     COMMENT "The json is used by youcompleteme to run the clang checker."
+# )

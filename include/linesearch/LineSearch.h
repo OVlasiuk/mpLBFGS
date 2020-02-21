@@ -26,6 +26,7 @@
 
 #include <Eigen/Core>
 #include <stdexcept>  // std::runtime_error
+#include "../Param.h"
 
 
 namespace LBFGSpp {
@@ -41,6 +42,21 @@ private:
     typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> Vector;
 
 public:
+    template <typename Foo>
+    static void Backtracking(Foo& f, Scalar& fx, Vector& x, Vector& grad,
+                             Scalar& step,
+                             const Vector& drt, const Vector& xp,
+                             const LBFGSParam<Scalar>& param);
+};
+
+
+
+template <typename Scalar>
+    template <typename Foo>
+    void LineSearch<Scalar>::Backtracking(Foo& f, Scalar& fx, Vector& x, Vector& grad,
+                             Scalar& step,
+                             const Vector& drt, const Vector& xp,
+                             const LBFGSParam<Scalar>& param)
     //
     // Line search by backtracking.
     //
@@ -58,11 +74,6 @@ public:
     // xp     The current point.
     // param  Parameters for the LBFGS algorithm
     //
-    template <typename Foo>
-    static void Backtracking(Foo& f, Scalar& fx, Vector& x, Vector& grad,
-                             Scalar& step,
-                             const Vector& drt, const Vector& xp,
-                             const LBFGSParam<Scalar>& param)
     {
         // Decreasing and increasing factors
         const Scalar dec = 0.5;
@@ -85,7 +96,6 @@ public:
 
         for(int iter = 0; iter < param.max_linesearch; iter++)
         {
-            // x_{k+1} = x_k + step * d_k
             x.noalias() = xp + step * drt;
             // Evaluate this candidate
             fx = f(x, grad);
@@ -126,8 +136,6 @@ public:
             step *= width;
         }
     }
-};
-
 
 } // namespace LBFGSpp
 

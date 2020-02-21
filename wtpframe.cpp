@@ -3,7 +3,7 @@
 #include <fstream>
 #include <random>
 #include <getopt.h>
-#include "wtpframe.h"
+#include "include/wtpframe.h"
 
 using namespace mpfr;
 using namespace LBFGSpp;

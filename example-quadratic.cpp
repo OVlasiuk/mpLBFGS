@@ -2,7 +2,7 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/unsupported/Eigen/MPRealSupport>
 #include "include/mpreal.h"
-#include "include/LBFGS.h"
+#include "include/solvers/descent.h"
 
 using Eigen::Matrix;
 using Eigen::Dynamic;
@@ -31,7 +31,8 @@ int main()
     const int n = 10;
     LBFGSParam<mpreal> param;
     param.epsilon = mpreal(1e-20);
-    LBFGSSolver<mpreal> solver(param);
+    GradSolver<mpreal> solver(param);
+    param.max_iterations = 10000;
 
     VectorXmp x = VectorXmp::Zero(n);
     mpreal fx, gn;

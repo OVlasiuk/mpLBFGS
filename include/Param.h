@@ -1,4 +1,5 @@
 // Copyright (c) 2016 Yixuan Qiu
+// Copyright (c) 2019 Alex Vlasiuk <oleksandr.vlasiuk@gmail.com>
 // ## The MIT License
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -19,7 +20,6 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-// Copyright (c) 2019 Alex Vlasiuk <oleksandr.vlasiuk@gmail.com>
 
 #ifndef PARAM_H
 #define PARAM_H

@@ -1,6 +1,6 @@
 #include <eigen3/Eigen/Core>
-#include <eigen3/unsupported/Eigen/MPRealSupport>
-#include "include/mpreal.h"
+// #include <eigen3/unsupported/Eigen/mprealSupport>
+// #include "include/mpreal.h"
 #include "include/solvers/conjdescent.h"
 
 using Eigen::Matrix;
@@ -37,7 +37,10 @@ int main()
     mpreal fx, gn;
     int niter = solver.minimize(foo, x, fx, gn);
 
-    std::cout << niter << " iterations" << std::endl;
+    if (niter > 0)
+        std::cout << niter << " iterations" << std::endl;
+    else
+        std::cout << "Maximum number of iterations reached: "<< param.max_iterations << std::endl;
     std::cout << "x = \n" << x.transpose() << std::endl;
     std::cout << "f(x) = " << fx << std::endl;
 

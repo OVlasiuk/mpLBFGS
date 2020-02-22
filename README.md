@@ -11,18 +11,12 @@ You can either take the provided Makefile as an example, or use cmake like so:
 
 The library itself is header only; however, it requires **Eigen** for matrix
 computations and **mpfr** for multiple precision floating point scalars. You
-will need **gmp** and **mpfr** installed on your system to link the executable.  
+will need **gmp** and **mpfr** installed on your system in order to use the multiple precision scalars. The optimizers are templatized in the scalar type, so falling back to the double precision is a search-and-replace away.
 
 ## Credits
 
 The code is derived from [libLBFGS](https://github.com/chokkan/liblbfgs) and
 [LBFGS++](http://yixuan.cos.name/LBFGSpp/doc/) libraries; the original algorithm
-and implementation goes back to Jorge Nocedal.  The multiple precision class
-mpreal uses [MPFR C++](http://www.holoborodko.com/pavel/mpfr/).  
+and implementation goes back to Jorge Nocedal and his collaborators.  The multiple precision numbers are provided by the [GNU MPFR](https://www.mpfr.org/), wrapped in `mpreal` class by [Pavel Holoborodko](http://www.holoborodko.com/pavel/mpfr/).  
 
 **mpLBFGS** is licensed under the GPL license.
-
-Copyright (c) 1990, Jorge Nocedal<br>
-Copyright (c) 2007–2010, Naoaki Okazaki<br>
-Copyright (c) 2016, Yixuan Qiu<br>
-Copyright (c) 2018–2019, Alex Vlasiuk<br>

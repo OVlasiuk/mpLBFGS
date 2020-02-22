@@ -32,7 +32,7 @@
 using mpfr::mpreal;
 
 
-namespace LBFGSpp {
+namespace mpopt {
 
 
 //
@@ -229,6 +229,6 @@ public:
 };
 
 
-} // namespace LBFGSpp
+}
 
-#endif // PARAM_H
+#endif 

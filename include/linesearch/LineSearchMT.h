@@ -16,7 +16,7 @@
 #include "mpreal.h"
 #include <eigen3/unsupported/Eigen/MPRealSupport>
 
-namespace LBFGSpp { 
+namespace mpopt { 
     //
     // More-Thuente line search algorithm.
     //

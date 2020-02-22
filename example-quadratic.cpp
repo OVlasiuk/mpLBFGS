@@ -1,14 +1,13 @@
-#include <iostream>
 #include <eigen3/Eigen/Core>
 #include <eigen3/unsupported/Eigen/MPRealSupport>
 #include "include/mpreal.h"
-#include "include/solvers/descent.h"
+#include "include/solvers/conjdescent.h"
 
 using Eigen::Matrix;
 using Eigen::Dynamic;
 
 using namespace mpfr;
-using namespace LBFGSpp;
+using namespace mpopt;
 
 typedef Matrix<mpreal,Dynamic,Dynamic>  MatrixXmp;
 typedef Matrix<mpreal,Dynamic,1>        VectorXmp;
@@ -31,8 +30,8 @@ int main()
     const int n = 10;
     LBFGSParam<mpreal> param;
     param.epsilon = mpreal(1e-20);
-    GradSolver<mpreal> solver(param);
-    param.max_iterations = 10000;
+    ConjGradSolver<mpreal> solver(param);
+    param.max_iterations = 1000;
 
     VectorXmp x = VectorXmp::Zero(n);
     mpreal fx, gn;

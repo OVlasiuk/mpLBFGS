@@ -9,9 +9,7 @@
 #include "linesearch/LineSearch.h"
 
 
-namespace LBFGSpp {
-
-
+namespace mpopt { 
     //
     // LBFGS solver for unconstrained numerical optimization
     //
@@ -55,136 +53,140 @@ namespace LBFGSpp {
                 //
                 // param An object of LBFGSParam to store parameters for the algorithm
                 //
-                LBFGSSolver(const LBFGSParam<Scalar>& param) :
-                    m_param(param)
+                LBFGSSolver(const LBFGSParam<Scalar>& param) : m_param(param)
             {
                 m_param.check_param();
             }
-
-                //
-                // Minimizing a multivariate function using LBFGS algorithm.
-                // Exceptions will be thrown if an error occurs.
-                //
-                // f  A function object such that `f(x, grad)` returns the
-                //    objective function value at `x`, and overwrites `grad` with
-                //    the gradient.
-                // x  In: An initial guess of the optimal point. Out: The best point
-                //    found.
-                // fx Out: The objective function value at `x`.
-                //
-                // @retval Number of iterations used.
-                //
                 template <typename Foo>
-                    int minimize(Foo f, Vector& x, Scalar& fx, Scalar& gnorm_return)
-                    {
-                        const int n = x.size();
-                        const int past_param = m_param.past;
-                        reset(n);
+                    int minimize(Foo f, Vector& x, Scalar& fx, Scalar& gnorm_return);
 
-                        // Evaluate function and compute gradient
-                        fx = f(x, grad_new);
-                        Scalar xnorm = x.norm();
-                        Scalar gnorm = grad_new.norm();
-                        if(past_param > 0)
-                            m_fx[0] = fx;
-
-                        // Early exit if the initial x is already a minimizer
-                        if(gnorm <= m_param.epsilon * std::max(xnorm, Scalar(1.0)))
-                        {
-                            gnorm_return = gnorm;
-                            return 1;
-                        }
-
-                        // Initial direction
-                        drt_mov.noalias() = -grad_new;
-                        // Initial step
-                        Scalar step = Scalar(1.0); // /drt_mov.norm();
-
-                        int k = 1;
-                        int end = 0;
-                        while(true)
-                        {
-                            // Save the curent x and gradient
-                            x_old.noalias() = x;
-                            grad_old.noalias() = grad_new;
-
-                            // Line search to update x, fx and gradient
-                            //
-                            LineSearch<Scalar>::Backtracking(f, fx, x, grad_new, step, drt_mov, x_old, m_param);
-
-                            // New x norm and gradient norm
-                            xnorm = x.norm();
-                            gnorm = grad_new.norm();
-
-                            // Convergence test -- gradient
-                            if(gnorm <= m_param.epsilon * std::max(xnorm, Scalar(1.0)))
-                            {
-                                gnorm_return = gnorm;
-                                return k;
-                            }
-                            // Convergence test -- objective function value
-                            if(past_param > 0)
-                            {
-                                if(k >= past_param && mpfr::abs((m_fx[k % past_param] - fx) / fx) < m_param.delta)
-                                    return k;
-
-                                m_fx[k % past_param] = fx;
-                            }
-                            // Maximum number of iterations
-                            if(m_param.max_iterations != 0 && k >= m_param.max_iterations)
-                            {
-                                return k;
-                            }
-
-                            // Update s and y
-                            // s_{k+1} = x_{k+1} - x_k
-                            // y_{k+1} = g_{k+1} - g_k
-                            MapVec svec(&m_s(0, end), n);
-                            MapVec yvec(&m_y(0, end), n);
-                            svec.noalias() = x - x_old;
-                            yvec.noalias() = grad_new - grad_old;
-
-                            // ys = y's = 1/rho
-                            // yy = y'y
-                            Scalar ys = yvec.dot(svec);
-                            Scalar yy = yvec.squaredNorm();
-                            m_ys[end] = ys;
-
-                            // Recursive formula to compute d = -H * g
-                            drt_mov.noalias() = -grad_new;
-                            int bound = std::min(m_param.m, k);
-                            end = (end + 1) % m_param.m;
-                            int j = end;
-                            for(int i = 0; i < bound; i++)
-                            {
-                                j = (j + m_param.m - 1) % m_param.m;
-                                MapVec sj(&m_s(0, j), n);
-                                MapVec yj(&m_y(0, j), n);
-                                m_alpha[j] = sj.dot(drt_mov) / m_ys[j];
-                                drt_mov.noalias() -= m_alpha[j] * yj;
-                            }
-
-                            drt_mov *= (ys / yy);
-
-                            for(int i = 0; i < bound; i++)
-                            {
-                                MapVec sj(&m_s(0, j), n);
-                                MapVec yj(&m_y(0, j), n);
-                                Scalar beta = yj.dot(drt_mov) / m_ys[j];
-                                drt_mov.noalias() += (m_alpha[j] - beta) * sj;
-                                j = (j + 1) % m_param.m;
-                            }
-
-                            // initial guess for step
-                            step = Scalar(1.0); //  /drt_mov.norm();
-                            k++;
-                        }
-
-                        return k;
-                    }
         };
 
 
-} // namespace LBFGSpp
+    template <typename Scalar>
+        template <typename Foo>
+        int  LBFGSSolver<Scalar>::minimize(
+                Foo f, Vector& x, Scalar& fx, Scalar& gnorm_return
+                )
+        //
+        // Minimizing f using the LBFGS algorithm.
+        //
+        // f  A function object such that `f(x, grad)` returns the
+        //    objective function value at `x`, and overwrites `grad` with
+        //    the gradient.
+        // x  In: An initial guess of the optimal point. Out: The best point
+        //    found.
+        // fx Out: The objective function value at `x`.
+        //
+        // @retval Number of iterations used.
+        //
+        {
+            const int n = x.size();
+            const int past_param = m_param.past;
+            reset(n);
 
-#endif // LBFGS_H
+            // Evaluate function and compute gradient
+            fx = f(x, grad_new);
+            Scalar xnorm = x.norm();
+            Scalar gnorm = grad_new.norm();
+            if(past_param > 0)
+                m_fx[0] = fx;
+
+            // Early exit if the initial x is already a minimizer
+            if(gnorm <= m_param.epsilon * std::max(xnorm, Scalar(1.0)))
+            {
+                gnorm_return = gnorm;
+                return 1;
+            }
+
+            // Initial direction
+            drt_mov.noalias() = -grad_new;
+            // Initial step
+            Scalar step = Scalar(1.0); // /drt_mov.norm();
+
+            int k = 1;
+            int end = 0;
+            while(true)
+            {
+                // Save the curent x and gradient
+                x_old.noalias() = x;
+                grad_old.noalias() = grad_new;
+
+                // Line search to update x, fx and gradient
+                //
+                LineSearch<Scalar>::Backtracking(f, fx, x, grad_new, step, drt_mov, x_old, m_param);
+
+                // New x norm and gradient norm
+                xnorm = x.norm();
+                gnorm = grad_new.norm();
+
+                // Convergence test -- gradient
+                if(gnorm <= m_param.epsilon * std::max(xnorm, Scalar(1.0)))
+                {
+                    gnorm_return = gnorm;
+                    return k;
+                }
+                // Convergence test -- objective function value
+                if(past_param > 0)
+                {
+                    if(k >= past_param && mpfr::abs((m_fx[k % past_param] - fx) / fx) < m_param.delta)
+                        return k;
+
+                    m_fx[k % past_param] = fx;
+                }
+                // Maximum number of iterations
+                if(m_param.max_iterations != 0 && k >= m_param.max_iterations)
+                {
+                    return k;
+                }
+
+                // Update s and y
+                // s_{k+1} = x_{k+1} - x_k
+                // y_{k+1} = g_{k+1} - g_k
+                MapVec svec(&m_s(0, end), n);
+                MapVec yvec(&m_y(0, end), n);
+                svec.noalias() = x - x_old;
+                yvec.noalias() = grad_new - grad_old;
+
+                // ys = y's = 1/rho
+                // yy = y'y
+                Scalar ys = yvec.dot(svec);
+                Scalar yy = yvec.squaredNorm();
+                m_ys[end] = ys;
+
+                // Recursive formula to compute d = -H * g
+                drt_mov.noalias() = -grad_new;
+                int bound = std::min(m_param.m, k);
+                end = (end + 1) % m_param.m;
+                int j = end;
+                for(int i = 0; i < bound; i++)
+                {
+                    j = (j + m_param.m - 1) % m_param.m;
+                    MapVec sj(&m_s(0, j), n);
+                    MapVec yj(&m_y(0, j), n);
+                    m_alpha[j] = sj.dot(drt_mov) / m_ys[j];
+                    drt_mov.noalias() -= m_alpha[j] * yj;
+                }
+
+                drt_mov *= (ys / yy);
+
+                for(int i = 0; i < bound; i++)
+                {
+                    MapVec sj(&m_s(0, j), n);
+                    MapVec yj(&m_y(0, j), n);
+                    Scalar beta = yj.dot(drt_mov) / m_ys[j];
+                    drt_mov.noalias() += (m_alpha[j] - beta) * sj;
+                    j = (j + 1) % m_param.m;
+                }
+
+                // initial guess for step
+                step = Scalar(1.0); //  /drt_mov.norm();
+                k++;
+            }
+
+            return k;
+        }
+
+} 
+
+#endif 

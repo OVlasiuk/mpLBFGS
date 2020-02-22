@@ -4,7 +4,7 @@
 #include "pframe.h"
 
 using namespace mpfr;
-using namespace LBFGSpp; 
+using namespace mpopt; 
 
 int main(int argc, char *argv[])
 {

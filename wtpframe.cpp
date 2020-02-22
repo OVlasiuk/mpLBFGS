@@ -6,7 +6,7 @@
 #include "include/wtpframe.h"
 
 using namespace mpfr;
-using namespace LBFGSpp;
+using namespace mpopt;
 
 void normalize(VectorXmp &x, const int n, const int dim)
 {

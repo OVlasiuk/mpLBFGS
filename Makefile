@@ -1,5 +1,5 @@
 targets = pframe wtpframe quadratic testmpeigen testmp
-FLAGS = -std=c++11 -O3 -Wpedantic
+FLAGS = -std=c++11 -O3 -Wpedantic -msse2
 LIBS = -lmpfr -lgmp
 INCLUDES = -Iinclude -I/usr/include/eigen3
 
@@ -19,9 +19,14 @@ testmp: testmp.cpp
 	g++ $(FLAGS) testmp.cpp -o testmp $(LIBS)
 
 getmpfr:
-	wget -o mpfrcpp.zip "http://www.holoborodko.com/pavel/downloads/mpfrc++-3.6.2.zip" 
-	unzip -p mpfrc++-3.6.2.zip mpreal.h > mpreal.h
+	wget "https://raw.githubusercontent.com/advanpix/mpreal/master/mpreal.h"
 	mv mpreal.h include/
+
+geteigen:
+	wget -o mpfrcpp.zip "https://gitlab.com/libeigen/eigen/-/archive/3.2.10/eigen-3.2.10.zip" 
+	unzip eigen-3.2.10.zip  
+	rm eigen-3.2.10.zip
+	mv eigen-3.2.10 include/eigen3
 
 # sine: sine.cpp
 # 	g++ -O2 -Wno-deprecated-declarations sine.cpp -o sine -lmpfr -lgmp 

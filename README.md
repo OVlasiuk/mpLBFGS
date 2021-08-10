@@ -12,6 +12,7 @@ You can either take the provided Makefile as an example, or use cmake like so:
 The library itself is header only; however, it requires **Eigen** for matrix
 computations and **mpfr** for multiple precision floating point scalars. You
 will need **gmp** and **mpfr** installed on your system in order to use the multiple precision scalars. The optimizers are templatized in the scalar type, so falling back to the double precision is a search-and-replace away.
+You can get the C++ mpfr wrapper and Eigen by running `make getmpfr` and `make geteigen` respectively.
 
 ## Credits
 

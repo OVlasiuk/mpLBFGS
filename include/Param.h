@@ -24,9 +24,9 @@
 #ifndef PARAM_H
 #define PARAM_H
 
-#include <Eigen/Core>
+#include <eigen3/Eigen/Core>
 #include <eigen3/unsupported/Eigen/MPRealSupport>
-#include "../mpreal.h"
+#include "./mpreal.h"
 #include <stdexcept>  // std::invalid_argument
 
 using mpfr::mpreal;

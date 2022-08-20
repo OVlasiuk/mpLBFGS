@@ -189,10 +189,10 @@ public:
         max_iterations = 0;
         linesearch     = LBFGS_LINESEARCH_BACKTRACKING_ARMIJO;
         max_linesearch = 20;
-        min_step       = Scalar(1e-20);
-        max_step       = Scalar(1e+20);
-        wolfec1           = Scalar(1e-4);
-        wolfec2          = Scalar(0.9);
+        min_step       = Scalar(1e-8);
+        max_step       = Scalar(1e+8);
+        wolfec1         = Scalar(1e-4);
+        wolfec2         = Scalar(0.9);
     }
 
     //

@@ -3,10 +3,11 @@
 #include <fstream>
 #include <random>
 #include <getopt.h>
-#include "include/wtpframe.h"
+#include "wtpframe.h"
 
 using namespace mpfr;
 using namespace mpopt;
+
 
 void normalize(VectorXmp &x, const int n, const int dim)
 {
@@ -26,7 +27,7 @@ int main(int argc, char *argv[])
     // Optimization parameters
     unsigned n  {12};
     unsigned dim  {3};
-    mpreal p {"3"};
+    double p {3};
     std::string epsilon {"20"}, epsilon_step {"40"};
     long inits {1}; 
     const unsigned history {5};
@@ -39,106 +40,12 @@ int main(int argc, char *argv[])
     param.max_iterations = 10000;
     // Output options
     bool gram {false}, coord {false}, help {false}, stage2 {true};
-    int option_index = 0;
-    static struct option long_options[] = {
-        {"n"       , required_argument , 0 , 'n' } ,
-        {"dim"     , required_argument , 0 , 'd' } ,
-        {"p"       , required_argument , 0 , 'p' } ,
-        {"epsilon" , required_argument , 0 , 'e' } ,
-        {"m"       , required_argument , 0 , 'm' } ,
-        {"inits"   , required_argument , 0 , 'i' } ,
-        {"gram"    , no_argument       , 0 , 'g' } ,
-        {"coord"   , no_argument       , 0 , 'c' } ,
-        {"help"    , no_argument       , 0 , 'h' } ,
-        {0         , 0                 , 0 , 0   }
-    };
 
-
-    // Parse command line input
-    int c; 
-    while ((c = getopt_long(argc, argv, "1n:d:p:e:m:i:gch", long_options, &option_index)) != -1) { 
-        switch (c) {
-            case 0:
-                printf("option %s", long_options[option_index].name);
-                if (optarg)
-                    printf(" with arg %s", optarg);
-                printf("\n");
-                break; 
-            case 'n':
-                n = atoi(optarg); 
-                break; 
-            case 'd':
-                dim = atoi(optarg);
-                break; 
-            case 'p':
-                p = atof(optarg);
-                break; 
-            case 'e':
-                epsilon = optarg;
-                break; 
-            case 'm':
-                param.m = atoi(optarg);
-                break; 
-            case 'i':
-                inits = atol(optarg);
-                break; 
-            case 'g':
-                gram = true;
-                break; 
-            case 'c':
-                coord = true;
-                break; 
-            case '1':
-                stage2 = false;
-                break; 
-            case 'h':
-                help = true;
-                break; 
-            case '?':
-                break; 
-
-            default:
-                printf("?? getopt returned character code 0%o ??\n", c);
-        }
-    }; 
-    
-    if (optind < argc) {
-        printf("Non-recognized arguments:");
-        while (optind < argc)
-            printf("%s ", argv[optind++]);
-        printf("\n");
-    }
-    char pstring[10];
-    sprintf(pstring, "%.3f",double(p));
-    // Done parsing command line input
-
-
-    // Talk to the user
-    std::cout << "Parameter values:" << std::endl;
-    std::printf("n = %d\t\tdim = %d \tp = %s\
-            \n-log10(epsilon) = %s\t\tparam.m = %d\n",
-            n, dim, pstring, 
-            epsilon.c_str(), param.m);
-    // std::cout << "n = " << n <<  "\t\t" << "dim = " << dim <<  "\t\t" << "p = " << p <<  "\t\t" << "-log10(epsilon) = " << epsilon <<  std::endl;
-    std::cout << "Initializations: " << inits  << std::endl;
-    std::cout << "2-stage optimization: " << (stage2 ?  "Yes" : "No") <<   std::endl;
-    std::cout << "Write gram matrix: " << (gram ?  "Yes" : "No") <<   std::endl;
-    std::cout << "Write coordinate matrix: " << (coord ?  "Yes" : "No") << std::endl <<  std::endl;
-
-    if (argc<2 || help)
-    {
-        std::cout << "This set of parameters corresponds to the following command line input: " << std::endl;
-        std::printf("./pframe -n %d -d %d -p %s -e %s -m %d -i %ld %s%s\n",
-                n, dim, pstring, epsilon.c_str(), param.m, inits,
-                (gram ?  "-g " : ""), (coord ?  "-c" : ""));
-        std::printf("Long options are also supported:\n\
-                --n       --dim     --p      \n\
-                --epsilon --m       --inits  \n\
-                --gram    --coord   --help\n");
-    }
+    // // Parse command line input
+    parseinput(argc, argv, n, dim, p, epsilon, param.m, inits, gram, coord, stage2, help);
     if (help)
         return 0;
-    // Done talking to the user
+    // Done parsing command line input
 
 
     // Initialize vector parameters
@@ -241,6 +148,9 @@ int main(int argc, char *argv[])
     std::cout.precision(24);
     std::cout << "f(x) = " << fx << std::endl;
     std::cout <<  "Gradient norm \n" << gx  << std::endl; 
+
+    char pstring[10];
+    sprintf(pstring, "%.3f", p);
 
     if ( gram )
     {

@@ -1,5 +1,5 @@
 // Copyright (c) 2016 Yixuan Qiu
-// Copyright (c) 2019 Alex Vlasiuk <oleksandr.vlasiuk@gmail.com>
+// Copyright (c) 2022 Alex Vlasiuk <oleksandr.vlasiuk@gmail.com>
 //
 // ## The MIT License
 // Permission is hereby granted, free of charge, to any person obtaining
@@ -44,41 +44,45 @@ private:
 
 public:
     template <typename Foo>
-    static void Backtracking(Foo& f, Scalar& fx, Vector& x, Vector& grad,
-                             Scalar& step,
-                             const Vector& drt, const Vector& xp,
-                             const LBFGSParam<Scalar>& param);
+        static void Backtracking(
+                Foo& f, Scalar& fx, Vector& x, Vector& grad,
+                Scalar& step,
+                const Vector& drt, const Vector& xp,
+                const LBFGSParam<Scalar>& param
+                );
 };
 
 
 
 template <typename Scalar>
     template <typename Foo>
-    void LineSearch<Scalar>::Backtracking(Foo& f, Scalar& fx, Vector& x, Vector& grad,
-                             Scalar& step,
-                             const Vector& drt, const Vector& xp,
-                             const LBFGSParam<Scalar>& param)
+    void LineSearch<Scalar>::Backtracking(
+            Foo& f, Scalar& fx, Vector& x, Vector& grad,
+            Scalar& step,
+            const Vector& drt, const Vector& xp,
+            const LBFGSParam<Scalar>& param
+            )
     //
     // Line search by backtracking.
     //
-    // f      A function object such that `f(x, grad)` returns the
-    //        objective function value at `x`, and overwrites `grad` with
-    //        the gradient.
-    // fx     In: The objective function value at the current point.
-    //        Out: The function value at the new point.
-    // x      Out: The new point moved to.
-    // grad   In: The current gradient vector. 
-    //        Out: The gradient at the new point.
-    // step   In: The initial step length.
-    //        Out: The calculated step length.
-    // drt    The current moving direction.
-    // xp     The current point.
-    // param  Parameters for the LBFGS algorithm
+    // f            A function object such that `f(x, grad)` returns the
+    //              objective function value at `x`, and overwrites `grad` with
+    //              the gradient.
+    // fx           In: The objective function value at the current point.
+    //              Out: The function value at the new point.
+    // x            Out: The new point moved to.
+    // grad         In: The current gradient vector. 
+    //              Out: The gradient at the new point.
+    // step         In: The initial step length.
+    //              Out: The calculated step length.
+    // drt          The current moving direction.
+    // xp           The current point.
+    // param        Parameters for the LBFGS algorithm
     //
     {
         // Decreasing and increasing factors
         const Scalar dec = 0.5;
-        const Scalar inc = 2.1;
+        const Scalar inc = 1.414213562;
         Scalar width;
 
         // Check the value of step

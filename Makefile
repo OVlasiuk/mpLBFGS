@@ -1,15 +1,15 @@
 targets = pframe wtpframe quadratic testmpeigen testmp
 FLAGS = -std=c++11 -O3 -Wpedantic -msse2
 LIBS = -lmpfr -lgmp
-INCLUDES = -Iinclude -I/usr/include/eigen3
+INCLUDES = -I. -I/usr/include/eigen3 
 
-wtpframe: wtpframe.cpp ./include/wtpframe.h ./include/solvers/LBFGS.h
-	g++ $(FLAGS) $(INCLUDES) wtpframe.cpp -o wtpframe $(LIBS)
+wtpframe: wtpframe.cpp parseinput.cpp ./wtpframe.h ./solvers/LBFGS.h
+	g++ $(FLAGS) $(INCLUDES) wtpframe.cpp parseinput.cpp -o wtpframe $(LIBS)
 
-pframe: pframe.cpp ./include/pframe.h ./include/LBFGS.h ./include/descent.h
+pframe: pframe.cpp ./include/pframe.h ./LBFGS.h ./descent.h
 	g++ $(FLAGS) $(INCLUDES)  pframe.cpp -o pframe $(LIBS)
 
-quadratic: example-quadratic.cpp ./include/solvers/descent.h
+quadratic: example-quadratic.cpp ./solvers/descent.h
 	g++ $(FLAGS) $(INCLUDES) example-quadratic.cpp -o quadratic $(LIBS)
 
 testmpeigen: testmpeigen.cpp

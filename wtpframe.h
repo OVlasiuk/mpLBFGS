@@ -13,6 +13,8 @@ typedef Matrix<mpreal,Dynamic,1>        VectorXmp;
 typedef Matrix<double,Dynamic,1>        VectorX;
 typedef Array<mpreal, Dynamic, Dynamic> ArrayXmp;
 
+void parseinput(const int __argc, char* const * __argv, unsigned& n, unsigned& dim, double& p, std::string& epsilon, int& paramm, long& inits, bool& gram, bool& coord, bool& stage2, bool& help);
+
 class wtPframe
 {
 private:

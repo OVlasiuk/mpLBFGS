@@ -1,7 +1,7 @@
 #include <eigen3/Eigen/Core>
 // #include <eigen3/unsupported/Eigen/mprealSupport>
 // #include "include/mpreal.h"
-#include "include/solvers/conjdescent.h"
+#include "solvers/conjdescent.h"
 
 using Eigen::Matrix;
 using Eigen::Dynamic;

@@ -1,37 +1,39 @@
 targets = pframe wtpframe quadratic testmpeigen testmp
 FLAGS = -std=c++11 -O3 -Wpedantic -msse2
 LIBS = -lmpfr -lgmp
-INCLUDES = -I. -I/usr/include/eigen3 
+INCLUDES = -Iinclude -I.
 
-wtpframe: wtpframe.cpp parseinput.cpp ./wtpframe.h ./solvers/LBFGS.h
-	g++ $(FLAGS) $(INCLUDES) wtpframe.cpp parseinput.cpp -o wtpframe $(LIBS)
+build/wtpframe: wtpframe.cpp parseinput.cpp ./wtpframe.h solvers/LBFGS.h
+	if [ ! -d build ]; then mkdir build; fi
+	g++ $(FLAGS) $(INCLUDES) wtpframe.cpp parseinput.cpp -o build/wtpframe $(LIBS)
 
-pframe: pframe.cpp ./include/pframe.h ./LBFGS.h ./descent.h
-	g++ $(FLAGS) $(INCLUDES)  pframe.cpp -o pframe $(LIBS)
+pframe: pframe.cpp ./pframe.h solvers/LBFGS.h solvers/descent.h
+	g++ $(FLAGS) $(INCLUDES)  pframe.cpp -o build/pframe $(LIBS)
 
-quadratic: example-quadratic.cpp ./solvers/descent.h
-	g++ $(FLAGS) $(INCLUDES) example-quadratic.cpp -o quadratic $(LIBS)
+quadratic: example-quadratic.cpp solvers/descent.h
+	g++ $(FLAGS) $(INCLUDES) example-quadratic.cpp -o build/quadratic $(LIBS)
 
 testmpeigen: testmpeigen.cpp
-	g++ $(FLAGS) $(INCLUDES) testmpeigen.cpp -o testmpeigen $(LIBS) 
+	g++ $(FLAGS) $(INCLUDES) testmpeigen.cpp -o build/testmpeigen $(LIBS) 
 
 testmp: testmp.cpp
-	g++ $(FLAGS) testmp.cpp -o testmp $(LIBS)
+	g++ $(FLAGS) testmp.cpp -o build/testmp $(LIBS)
 
-getmpfr:
+include/mpreal.h:
+	if [ ! -d include ]; then mkdir include; fi
 	wget "https://raw.githubusercontent.com/advanpix/mpreal/master/mpreal.h"
 	mv mpreal.h include/
 
-geteigen:
-	wget -o mpfrcpp.zip "https://gitlab.com/libeigen/eigen/-/archive/3.2.10/eigen-3.2.10.zip" 
+include/eigen3:
+	wget "https://gitlab.com/libeigen/eigen/-/archive/3.2.10/eigen-3.2.10.zip" 
 	unzip eigen-3.2.10.zip  
 	rm eigen-3.2.10.zip
-	mv eigen-3.2.10 include/eigen3
+	if [ ! -d include/eigen3 ]; then mkdir -p include/eigen3; fi
+	mv eigen-3.2.10 eigen3
+	mv eigen3 include/
 
-# sine: sine.cpp
-# 	g++ -O2 -Wno-deprecated-declarations sine.cpp -o sine -lmpfr -lgmp 
-
-.PHONY: clean
+.PHONY: clean all
 clean:
-	-rm -f *.o 
-	-rm $(targets)
+	-rm -rf build include
+
+all: include/eigen3 include/mpreal.h build/wtpframe

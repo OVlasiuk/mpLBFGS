@@ -1,7 +1,7 @@
 targets = pframe wtpframe quadratic testmpeigen testmp
 FLAGS = -std=c++11 -O3 -Wpedantic -msse2
 LIBS = -lmpfr -lgmp
-INCLUDES = -Iinclude -I.
+INCLUDES = -Iinclude -Iinclude/eigen3 -I.
 
 build/wtpframe: wtpframe.cpp parseinput.cpp ./wtpframe.h solvers/LBFGS.h
 	if [ ! -d build ]; then mkdir build; fi

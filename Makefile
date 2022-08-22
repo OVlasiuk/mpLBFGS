@@ -21,11 +21,11 @@ testmp: testmp.cpp
 
 include/mpreal.h:
 	if [ ! -d include ]; then mkdir include; fi
-	wget "https://raw.githubusercontent.com/advanpix/mpreal/master/mpreal.h"
+	if type curl > /dev/null; then curl --output mpreal.h "https://raw.githubusercontent.com/advanpix/mpreal/master/mpreal.h"; else echo "You don't seem to have curl on your system."; fi
 	mv mpreal.h include/
 
 include/eigen3:
-	wget "https://gitlab.com/libeigen/eigen/-/archive/3.2.10/eigen-3.2.10.zip" 
+	if type curl > /dev/null; then curl --output eigen-3.2.10.zip "https://gitlab.com/libeigen/eigen/-/archive/3.2.10/eigen-3.2.10.zip"; else echo "You don't seem to have curl on your system."; fi
 	unzip eigen-3.2.10.zip  
 	rm eigen-3.2.10.zip
 	if [ ! -d include/eigen3 ]; then mkdir -p include/eigen3; fi

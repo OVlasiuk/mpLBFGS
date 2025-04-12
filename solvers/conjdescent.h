@@ -5,7 +5,6 @@
 
 #include <eigen3/Eigen/Core>
 #include "../Param.h"
-#include "../riesz.h"
 #include "../linesearch/LineSearchMT.h"
 #include "../linesearch/LineSearch.h"
 

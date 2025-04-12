@@ -3,9 +3,7 @@
 #ifndef DESCENT_H
 #define DESCENT_H
 
-#include <Eigen/Core>
 #include "../Param.h"
-#include "riesz.h"
 #include "../linesearch/LineSearchMT.h"
 #include "../linesearch/LineSearch.h"
 

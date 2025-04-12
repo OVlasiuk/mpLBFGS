@@ -24,12 +24,8 @@
 #ifndef PARAM_H
 #define PARAM_H
 
-#include <eigen3/Eigen/Core>
-#include <eigen3/unsupported/Eigen/MPRealSupport>
-#include "./mpreal.h"
+#include <Types.h>
 #include <stdexcept>  // std::invalid_argument
-
-using mpfr::mpreal;
 
 
 namespace mpopt {

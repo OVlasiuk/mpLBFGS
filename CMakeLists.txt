@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5.0)
 project(wtpframe)
 set(CMAKE_BUILD_TYPE Release)
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
